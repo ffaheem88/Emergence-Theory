@@ -1,0 +1,15 @@
+{
+  "name": "emergence-agents",
+  "version": "1.0.0",
+  "description": "Multi-agent reasoning system for emergence framework",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^4.18.2",
+    "ws": "^8.16.0"
+  }
+}

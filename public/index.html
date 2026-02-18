@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emergence Theory - Multi-Agent Reasoning</title>
+  <style>
+    :root {
+      --bg-dark: #0d1117;
+      --bg-card: #161b22;
+      --bg-hover: #21262d;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --text-dim: #8b949e;
+      --accent-theorist: #a371f7;
+      --accent-critic: #f85149;
+      --accent-empiricist: #3fb950;
+      --accent-synthesizer: #58a6ff;
+      --accent-human: #f0883e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      grid-template-rows: auto 1fr auto;
+      height: 100vh;
+      gap: 1px;
+      background: var(--border);
+    }
+
+    header {
+      grid-column: 1 / -1;
+      background: var(--bg-card);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0.75rem;
+      background: var(--bg-hover);
+      border-radius: 20px;
+      font-size: 0.875rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-dim);
+    }
+
+    .status-dot.running {
+      background: var(--accent-empiricist);
+      animation: pulse 1s infinite;
+    }
+
+    .status-dot.paused {
+      background: var(--accent-human);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .discussion-panel {
+      background: var(--bg-dark);
+      overflow-y: auto;
+      padding: 1rem;
+    }
+
+    .state-panel {
+      background: var(--bg-card);
+      overflow-y: auto;
+      padding: 1rem;
+      border-left: 1px solid var(--border);
+    }
+
+    .state-panel h2 {
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .state-content {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.8rem;
+      white-space: pre-wrap;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    .controls {
+      grid-column: 1 / -1;
+      background: var(--bg-card);
+      padding: 1rem 1.5rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      border-top: 1px solid var(--border);
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border);
+      background: var(--bg-hover);
+      color: var(--text);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.15s;
+    }
+
+    button:hover {
+      background: var(--border);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button.primary {
+      background: var(--accent-synthesizer);
+      border-color: var(--accent-synthesizer);
+      color: white;
+    }
+
+    button.primary:hover {
+      filter: brightness(1.1);
+    }
+
+    button.danger {
+      border-color: var(--accent-critic);
+      color: var(--accent-critic);
+    }
+
+    .message {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+
+    .message-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .agent-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .agent-badge.theorist {
+      background: rgba(163, 113, 247, 0.2);
+      color: var(--accent-theorist);
+    }
+
+    .agent-badge.critic {
+      background: rgba(248, 81, 73, 0.2);
+      color: var(--accent-critic);
+    }
+
+    .agent-badge.empiricist {
+      background: rgba(63, 185, 80, 0.2);
+      color: var(--accent-empiricist);
+    }
+
+    .agent-badge.synthesizer {
+      background: rgba(88, 166, 255, 0.2);
+      color: var(--accent-synthesizer);
+    }
+
+    .agent-badge.human {
+      background: rgba(240, 136, 62, 0.2);
+      color: var(--accent-human);
+    }
+
+    .round-badge {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .message-content {
+      padding: 1rem;
+      font-size: 0.875rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+
+    .message-content h3 {
+      color: var(--accent-synthesizer);
+      margin: 1rem 0 0.5rem 0;
+      font-size: 0.9rem;
+    }
+
+    .message-content h3:first-child {
+      margin-top: 0;
+    }
+
+    .thinking-indicator {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .thinking-dots {
+      display: flex;
+      gap: 4px;
+    }
+
+    .thinking-dots span {
+      width: 8px;
+      height: 8px;
+      background: var(--text-dim);
+      border-radius: 50%;
+      animation: thinking 1.4s infinite;
+    }
+
+    .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes thinking {
+      0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    .intervention-input {
+      flex: 1;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .intervention-input textarea {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      background: var(--bg-dark);
+      color: var(--text);
+      border-radius: 6px;
+      font-size: 0.875rem;
+      resize: none;
+      min-height: 38px;
+      max-height: 100px;
+    }
+
+    .intervention-input textarea:focus {
+      outline: none;
+      border-color: var(--accent-synthesizer);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-dim);
+    }
+
+    .empty-state h3 {
+      margin-bottom: 0.5rem;
+    }
+
+    .round-divider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1.5rem 0;
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .round-divider::before,
+    .round-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .meta-note {
+      background: rgba(88, 166, 255, 0.1);
+      border: 1px solid rgba(88, 166, 255, 0.3);
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.8rem;
+      color: var(--accent-synthesizer);
+    }
+
+    /* Settings Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 90%;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal h2 {
+      margin-bottom: 1.5rem;
+      font-size: 1.25rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--text-dim);
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      background: var(--bg-dark);
+      color: var(--text);
+      border-radius: 6px;
+      font-size: 0.875rem;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--accent-synthesizer);
+    }
+
+    .model-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+      margin-top: 1.5rem;
+    }
+
+    .api-key-status {
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    .api-key-status.set {
+      color: var(--accent-empiricist);
+    }
+
+    .api-key-status.not-set {
+      color: var(--accent-critic);
+    }
+
+    .error-banner {
+      background: rgba(248, 81, 73, 0.2);
+      border: 1px solid var(--accent-critic);
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+      color: var(--accent-critic);
+    }
+
+    .model-cost {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      margin-top: 0.25rem;
+    }
+
+    .model-cost.free {
+      color: var(--accent-empiricist);
+    }
+
+    .form-group select {
+      max-width: 100%;
+    }
+
+    .form-group select option {
+      padding: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Emergence Theory — Multi-Agent Reasoning</h1>
+      <div class="status-bar">
+        <div class="status-indicator" id="apiStatus">
+          <span>API: </span><span id="apiStatusText">Checking...</span>
+        </div>
+        <div class="status-indicator">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="statusText">Stopped</span>
+        </div>
+        <div class="status-indicator">
+          Round <span id="roundNum">0</span>
+        </div>
+        <button id="settingsBtn" style="padding: 0.25rem 0.5rem;">
+          <span>⚙️</span> Settings
+        </button>
+      </div>
+    </header>
+
+    <div class="discussion-panel" id="discussionPanel">
+      <div id="errorBanner" class="error-banner" style="display: none;"></div>
+      <div class="meta-note">
+        This multi-agent setup is itself an application of the emergence framework.
+        The constrained process should produce qualitatively different output than a single unconstrained agent.
+      </div>
+      <div id="discussion">
+        <div class="empty-state">
+          <h3>No discussion yet</h3>
+          <p>Click "Play" or "Step" to begin the agent reasoning process.</p>
+        </div>
+      </div>
+      <div id="thinkingIndicator" style="display: none;" class="thinking-indicator">
+        <div class="thinking-dots">
+          <span></span><span></span><span></span>
+        </div>
+        <span id="thinkingText">Agent is thinking...</span>
+      </div>
+    </div>
+
+    <div class="state-panel">
+      <h2>Shared State Document</h2>
+      <pre class="state-content" id="stateContent">Loading...</pre>
+    </div>
+
+    <div class="controls">
+      <button id="playBtn" class="primary">
+        <span>▶</span> Play
+      </button>
+      <button id="pauseBtn" disabled>
+        <span>⏸</span> Pause
+      </button>
+      <button id="stepBtn">
+        <span>⏭</span> Step
+      </button>
+      <button id="resetBtn" class="danger">
+        <span>🔄</span> Reset
+      </button>
+      <button id="exportBtn">
+        <span>📥</span> Export
+      </button>
+
+      <div class="intervention-input">
+        <textarea id="interventionInput" placeholder="Inject your thoughts into the discussion..." rows="1"></textarea>
+        <button id="injectBtn">
+          <span>💉</span> Inject
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+      <h2>⚙️ Settings</h2>
+
+      <div class="form-group">
+        <label>OpenRouter API Key</label>
+        <input type="password" id="apiKeyInput" placeholder="sk-or-...">
+        <div class="api-key-status" id="apiKeyStatus"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Models (per agent) - <span id="modelCount">Loading...</span></label>
+        <div class="model-grid">
+          <div>
+            <label style="color: var(--accent-theorist);">Theorist</label>
+            <select id="modelTheorist"></select>
+            <div class="model-cost" id="costTheorist"></div>
+          </div>
+          <div>
+            <label style="color: var(--accent-critic);">Critic</label>
+            <select id="modelCritic"></select>
+            <div class="model-cost" id="costCritic"></div>
+          </div>
+          <div>
+            <label style="color: var(--accent-empiricist);">Empiricist</label>
+            <select id="modelEmpiricist"></select>
+            <div class="model-cost" id="costEmpiricist"></div>
+          </div>
+          <div>
+            <label style="color: var(--accent-synthesizer);">Synthesizer</label>
+            <select id="modelSynthesizer"></select>
+            <div class="model-cost" id="costSynthesizer"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="cancelSettingsBtn">Cancel</button>
+        <button id="saveSettingsBtn" class="primary">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // WebSocket connection
+    let ws;
+    let discussion = [];
+    let currentState = '';
+    let isRunning = false;
+    let isPaused = false;
+    let hasApiKey = false;
+
+    function connect() {
+      ws = new WebSocket(`ws://${window.location.host}`);
+
+      ws.onopen = () => {
+        console.log('Connected to server');
+        loadConfig();
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        handleMessage(data);
+      };
+
+      ws.onclose = () => {
+        console.log('Disconnected, reconnecting...');
+        setTimeout(connect, 1000);
+      };
+    }
+
+    let availableModels = [];
+
+    // Format cost for display (cost per 1M tokens)
+    function formatCost(cost) {
+      const perMillion = cost * 1000000;
+      if (perMillion === 0) return 'Free';
+      if (perMillion < 0.01) return `$${perMillion.toFixed(4)}`;
+      if (perMillion < 1) return `$${perMillion.toFixed(3)}`;
+      return `$${perMillion.toFixed(2)}`;
+    }
+
+    function populateModelDropdowns() {
+      const selects = ['modelTheorist', 'modelCritic', 'modelEmpiricist', 'modelSynthesizer'];
+
+      selects.forEach(selectId => {
+        const select = document.getElementById(selectId);
+        select.innerHTML = '';
+
+        // Group models by provider
+        const providers = {};
+        availableModels.forEach(m => {
+          const provider = m.id.split('/')[0];
+          if (!providers[provider]) providers[provider] = [];
+          providers[provider].push(m);
+        });
+
+        Object.keys(providers).sort().forEach(provider => {
+          const group = document.createElement('optgroup');
+          group.label = provider.charAt(0).toUpperCase() + provider.slice(1);
+
+          providers[provider].forEach(m => {
+            const option = document.createElement('option');
+            option.value = m.id;
+            const costStr = m.promptCost === 0 ? ' (Free)' : ` ($${(m.promptCost * 1000000).toFixed(2)}/M)`;
+            option.textContent = m.name.replace(/^[^:]+:\s*/, '') + costStr;
+            group.appendChild(option);
+          });
+
+          select.appendChild(group);
+        });
+
+        // Add change listener to update cost display
+        select.addEventListener('change', () => updateCostDisplay(selectId));
+      });
+    }
+
+    function updateCostDisplay(selectId) {
+      const agent = selectId.replace('model', '');
+      const select = document.getElementById(selectId);
+      const costDiv = document.getElementById('cost' + agent);
+      const model = availableModels.find(m => m.id === select.value);
+
+      if (model) {
+        const promptCost = formatCost(model.promptCost);
+        const completionCost = formatCost(model.completionCost);
+        const isFree = model.promptCost === 0 && model.completionCost === 0;
+        costDiv.className = 'model-cost' + (isFree ? ' free' : '');
+        costDiv.textContent = isFree ? 'Free!' : `In: ${promptCost}/M · Out: ${completionCost}/M`;
+      }
+    }
+
+    async function loadConfig() {
+      const res = await fetch('/api/config');
+      const config = await res.json();
+      hasApiKey = config.hasApiKey;
+      availableModels = config.availableModels || [];
+      updateApiStatus();
+
+      // Update model count
+      document.getElementById('modelCount').textContent = `${availableModels.length} models available`;
+
+      // Populate dropdowns
+      if (availableModels.length > 0) {
+        populateModelDropdowns();
+
+        // Set current values
+        document.getElementById('modelTheorist').value = config.models.theorist;
+        document.getElementById('modelCritic').value = config.models.critic;
+        document.getElementById('modelEmpiricist').value = config.models.empiricist;
+        document.getElementById('modelSynthesizer').value = config.models.synthesizer;
+
+        // Update cost displays
+        ['modelTheorist', 'modelCritic', 'modelEmpiricist', 'modelSynthesizer'].forEach(updateCostDisplay);
+      }
+    }
+
+    function updateApiStatus() {
+      const statusEl = document.getElementById('apiStatusText');
+      const keyStatusEl = document.getElementById('apiKeyStatus');
+
+      if (hasApiKey) {
+        statusEl.textContent = '✅ Ready';
+        statusEl.style.color = 'var(--accent-empiricist)';
+        keyStatusEl.textContent = '✅ API key is set';
+        keyStatusEl.className = 'api-key-status set';
+      } else {
+        statusEl.textContent = '❌ No API Key';
+        statusEl.style.color = 'var(--accent-critic)';
+        keyStatusEl.textContent = '❌ API key not set - add it above';
+        keyStatusEl.className = 'api-key-status not-set';
+      }
+    }
+
+    function handleMessage(data) {
+      switch (data.type) {
+        case 'init':
+          discussion = data.sessions.discussion || [];
+          currentState = data.state;
+          isRunning = data.isRunning;
+          isPaused = data.isPaused;
+          updateUI();
+          break;
+
+        case 'agent_start':
+          showThinking(data.agent);
+          hideError();
+          break;
+
+        case 'agent_complete':
+          hideThinking();
+          discussion.push(data.entry);
+          updateUI();
+          scrollToBottom();
+          break;
+
+        case 'agent_error':
+          hideThinking();
+          showError(`${data.agent} error: ${data.error}`);
+          break;
+
+        case 'state_updated':
+          currentState = data.content;
+          updateStatePanel();
+          break;
+
+        case 'round_start':
+          document.getElementById('roundNum').textContent = data.round;
+          break;
+
+        case 'round_complete':
+          document.getElementById('roundNum').textContent = data.round;
+          break;
+
+        case 'intervention':
+          discussion.push(data.entry);
+          updateUI();
+          scrollToBottom();
+          break;
+
+        case 'paused':
+          isPaused = true;
+          updateStatus();
+          break;
+
+        case 'resumed':
+          isPaused = false;
+          updateStatus();
+          break;
+
+        case 'stopped':
+          isRunning = false;
+          isPaused = false;
+          updateStatus();
+          hideThinking();
+          break;
+
+        case 'reset':
+          discussion = [];
+          isRunning = false;
+          isPaused = false;
+          document.getElementById('roundNum').textContent = '0';
+          fetch('/api/state').then(r => r.json()).then(d => {
+            currentState = d.state;
+            updateUI();
+          });
+          break;
+      }
+    }
+
+    function showError(message) {
+      const banner = document.getElementById('errorBanner');
+      banner.textContent = message;
+      banner.style.display = 'block';
+    }
+
+    function hideError() {
+      document.getElementById('errorBanner').style.display = 'none';
+    }
+
+    function updateUI() {
+      updateDiscussion();
+      updateStatePanel();
+      updateStatus();
+      updateButtons();
+    }
+
+    function updateDiscussion() {
+      const container = document.getElementById('discussion');
+
+      if (discussion.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <h3>No discussion yet</h3>
+            <p>Click "Play" or "Step" to begin the agent reasoning process.</p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      let lastRound = 0;
+
+      for (const entry of discussion) {
+        if (entry.round > lastRound) {
+          html += `<div class="round-divider">Round ${entry.round}</div>`;
+          lastRound = entry.round;
+        }
+
+        html += `
+          <div class="message${entry.isIntervention ? ' intervention' : ''}">
+            <div class="message-header">
+              <span class="agent-badge ${entry.agent}">${entry.agent}</span>
+              <span class="round-badge">Round ${entry.round}</span>
+            </div>
+            <div class="message-content">${formatContent(entry.content)}</div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function formatContent(content) {
+      return content
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.1);padding:0.1em 0.3em;border-radius:3px;">$1</code>');
+    }
+
+    function updateStatePanel() {
+      document.getElementById('stateContent').textContent = currentState;
+    }
+
+    function updateStatus() {
+      const dot = document.getElementById('statusDot');
+      const text = document.getElementById('statusText');
+
+      if (isRunning && !isPaused) {
+        dot.className = 'status-dot running';
+        text.textContent = 'Running';
+      } else if (isPaused) {
+        dot.className = 'status-dot paused';
+        text.textContent = 'Paused';
+      } else {
+        dot.className = 'status-dot';
+        text.textContent = 'Stopped';
+      }
+    }
+
+    function updateButtons() {
+      document.getElementById('playBtn').disabled = isRunning && !isPaused;
+      document.getElementById('pauseBtn').disabled = !isRunning || isPaused;
+      document.getElementById('stepBtn').disabled = isRunning && !isPaused;
+    }
+
+    function showThinking(agent) {
+      const indicator = document.getElementById('thinkingIndicator');
+      const text = document.getElementById('thinkingText');
+      indicator.style.display = 'flex';
+      text.textContent = `${agent.toUpperCase()} is thinking...`;
+      scrollToBottom();
+    }
+
+    function hideThinking() {
+      document.getElementById('thinkingIndicator').style.display = 'none';
+    }
+
+    function scrollToBottom() {
+      const panel = document.getElementById('discussionPanel');
+      panel.scrollTop = panel.scrollHeight;
+    }
+
+    // Button handlers
+    document.getElementById('playBtn').addEventListener('click', async () => {
+      if (isPaused) {
+        await fetch('/api/resume', { method: 'POST' });
+      } else {
+        const res = await fetch('/api/start', { method: 'POST' });
+        if (!res.ok) {
+          const data = await res.json();
+          showError(data.error);
+          return;
+        }
+      }
+      isRunning = true;
+      isPaused = false;
+      updateButtons();
+      updateStatus();
+    });
+
+    document.getElementById('pauseBtn').addEventListener('click', async () => {
+      await fetch('/api/pause', { method: 'POST' });
+      isPaused = true;
+      updateButtons();
+      updateStatus();
+    });
+
+    document.getElementById('stepBtn').addEventListener('click', async () => {
+      const res = await fetch('/api/step', { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json();
+        showError(data.error);
+      }
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', async () => {
+      if (confirm('Reset all progress? This cannot be undone.')) {
+        await fetch('/api/reset', { method: 'POST' });
+      }
+    });
+
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      window.open('/api/export', '_blank');
+    });
+
+    document.getElementById('injectBtn').addEventListener('click', async () => {
+      const input = document.getElementById('interventionInput');
+      const content = input.value.trim();
+
+      if (!content) return;
+
+      await fetch('/api/intervene', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, asAgent: 'human' })
+      });
+
+      input.value = '';
+    });
+
+    // Settings modal
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+      document.getElementById('settingsModal').classList.add('active');
+    });
+
+    document.getElementById('cancelSettingsBtn').addEventListener('click', () => {
+      document.getElementById('settingsModal').classList.remove('active');
+    });
+
+    document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
+      const apiKey = document.getElementById('apiKeyInput').value.trim();
+      const models = {
+        theorist: document.getElementById('modelTheorist').value,
+        critic: document.getElementById('modelCritic').value,
+        empiricist: document.getElementById('modelEmpiricist').value,
+        synthesizer: document.getElementById('modelSynthesizer').value
+      };
+
+      const payload = { models };
+      if (apiKey) {
+        payload.apiKey = apiKey;
+      }
+
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (apiKey) {
+        hasApiKey = true;
+        updateApiStatus();
+        document.getElementById('apiKeyInput').value = '';
+      }
+
+      document.getElementById('settingsModal').classList.remove('active');
+    });
+
+    document.getElementById('settingsModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('settingsModal')) {
+        document.getElementById('settingsModal').classList.remove('active');
+      }
+    });
+
+    // Auto-resize textarea
+    document.getElementById('interventionInput').addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+    });
+
+    // Initialize
+    connect();
+  </script>
+</body>
+</html>

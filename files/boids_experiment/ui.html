@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FCC Falsification Test - Boids Simulation</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 20px 30px;
+            border-bottom: 1px solid #333;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .simulation-panel {
+            background: #12121a;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #2a2a3a;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            max-height: 600px;
+        }
+
+        #boidsCanvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group label {
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        input[type="range"] {
+            width: 150px;
+            accent-color: #6366f1;
+        }
+
+        .value-display {
+            background: #1e1e2e;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #6366f1;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #5558e3;
+            transform: translateY(-1px);
+        }
+
+        button.secondary {
+            background: #2a2a3a;
+        }
+
+        button.secondary:hover {
+            background: #3a3a4a;
+        }
+
+        .metrics-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .metric-card {
+            background: #12121a;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #2a2a3a;
+        }
+
+        .metric-card h3 {
+            font-size: 0.85rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        .metric-value.positive { color: #22c55e; }
+        .metric-value.neutral { color: #6366f1; }
+        .metric-value.warning { color: #f59e0b; }
+
+        .chart-container {
+            background: #12121a;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #2a2a3a;
+            height: 300px;
+        }
+
+        .chart-container h3 {
+            font-size: 0.85rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        .results-panel {
+            background: #12121a;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #2a2a3a;
+        }
+
+        .verdict {
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .verdict.supported {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid #22c55e;
+        }
+
+        .verdict.weak {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid #f59e0b;
+        }
+
+        .verdict.falsified {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid #ef4444;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+            font-size: 0.8rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            background: #1e1e2e;
+            border: none;
+            border-radius: 6px;
+            color: #888;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .tab.active {
+            background: #6366f1;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #2a2a3a;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #888;
+        }
+
+        .info-value {
+            font-family: monospace;
+            color: #6366f1;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .sweep-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 1200px) {
+            .main {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-panel {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>FCC Falsification Test: Boids Simulation</h1>
+        <p>Testing emergence as phase transition - Sweep alignment strength (α) to detect discontinuous TEΔ jump</p>
+    </div>
+
+    <div class="main">
+        <div class="left-panel">
+            <div class="simulation-panel">
+                <div class="canvas-container">
+                    <canvas id="boidsCanvas"></canvas>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label>α (Alignment):</label>
+                        <input type="range" id="alphaSlider" min="0" max="3" step="0.1" value="1">
+                        <span class="value-display" id="alphaValue">1.0</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Boids:</label>
+                        <input type="range" id="boidsSlider" min="20" max="200" step="10" value="100">
+                        <span class="value-display" id="boidsValue">100</span>
+                    </div>
+
+                    <button id="resetBtn" class="secondary">Reset</button>
+                    <button id="pauseBtn">Pause</button>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #6366f1;"></div>
+                        <span>Low alignment</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #22c55e;"></div>
+                        <span>High alignment</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container" style="margin-top: 20px;">
+                <h3>Real-time Metrics History</h3>
+                <canvas id="metricsChart"></canvas>
+            </div>
+        </div>
+
+        <div class="metrics-panel">
+            <div class="metric-card">
+                <h3>Polarization</h3>
+                <div class="metric-value neutral" id="polarizationValue">0.00</div>
+                <p style="font-size: 0.8rem; color: #666; margin-top: 5px;">Velocity alignment (0-1)</p>
+            </div>
+
+            <div class="metric-card">
+                <h3>TEΔ Estimate</h3>
+                <div class="metric-value positive" id="teDeltaValue">0.00</div>
+                <p style="font-size: 0.8rem; color: #666; margin-top: 5px;">Emergence signal</p>
+            </div>
+
+            <div class="metric-card">
+                <h3>Dispersion</h3>
+                <div class="metric-value warning" id="dispersionValue">0.00</div>
+                <p style="font-size: 0.8rem; color: #666; margin-top: 5px;">Flock spread</p>
+            </div>
+
+            <div class="results-panel">
+                <div class="tabs">
+                    <button class="tab active" data-tab="live">Live</button>
+                    <button class="tab" data-tab="results">Results</button>
+                </div>
+
+                <div id="liveTab" class="tab-content active">
+                    <div class="info-row">
+                        <span class="info-label">Frame</span>
+                        <span class="info-value" id="frameCount">0</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Avg Speed</span>
+                        <span class="info-value" id="avgSpeed">0.00</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Neighbors (avg)</span>
+                        <span class="info-value" id="avgNeighbors">0</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Centroid</span>
+                        <span class="info-value" id="centroid">(0, 0)</span>
+                    </div>
+                </div>
+
+                <div id="resultsTab" class="tab-content">
+                    <p style="color: #888; margin-bottom: 15px;">Load sweep results to view analysis</p>
+                    <input type="file" id="fileInput" accept=".json,.csv">
+                    <div class="sweep-controls">
+                        <button id="loadResultsBtn" class="secondary">Load Results</button>
+                    </div>
+
+                    <div id="resultsContent" style="margin-top: 20px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Boids Simulation
+        class Boid {
+            constructor(x, y, vx, vy) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+            }
+        }
+
+        class BoidsSimulation {
+            constructor(canvas, config = {}) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.config = {
+                    nBoids: config.nBoids || 100,
+                    worldSize: config.worldSize || 100,
+                    maxSpeed: config.maxSpeed || 2,
+                    perceptionRadius: config.perceptionRadius || 10,
+                    alignmentWeight: config.alignmentWeight || 1,
+                    cohesionWeight: config.cohesionWeight || 1,
+                    separationWeight: config.separationWeight || 1.5,
+                    separationRadius: config.separationRadius || 2,
+                    noiseStd: config.noiseStd || 0.1,
+                    dt: config.dt || 0.1
+                };
+
+                this.boids = [];
+                this.frame = 0;
+                this.running = true;
+                this.history = [];
+                this.maxHistory = 200;
+
+                this.resize();
+                this.reset();
+
+                window.addEventListener('resize', () => this.resize());
+            }
+
+            resize() {
+                const rect = this.canvas.parentElement.getBoundingClientRect();
+                const size = Math.min(rect.width, rect.height);
+                this.canvas.width = size;
+                this.canvas.height = size;
+                this.scale = size / this.config.worldSize;
+            }
+
+            reset() {
+                this.boids = [];
+                this.frame = 0;
+                this.history = [];
+
+                for (let i = 0; i < this.config.nBoids; i++) {
+                    const x = Math.random() * this.config.worldSize;
+                    const y = Math.random() * this.config.worldSize;
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = (0.5 + Math.random() * 0.5) * this.config.maxSpeed;
+                    this.boids.push(new Boid(x, y, Math.cos(angle) * speed, Math.sin(angle) * speed));
+                }
+            }
+
+            setNBoids(n) {
+                this.config.nBoids = n;
+                this.reset();
+            }
+
+            getNeighbors(idx) {
+                const boid = this.boids[idx];
+                const neighbors = [];
+                const r = this.config.perceptionRadius;
+                const ws = this.config.worldSize;
+
+                for (let i = 0; i < this.boids.length; i++) {
+                    if (i === idx) continue;
+
+                    let dx = this.boids[i].x - boid.x;
+                    let dy = this.boids[i].y - boid.y;
+
+                    // Periodic boundary
+                    if (dx > ws / 2) dx -= ws;
+                    if (dx < -ws / 2) dx += ws;
+                    if (dy > ws / 2) dy -= ws;
+                    if (dy < -ws / 2) dy += ws;
+
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < r) {
+                        neighbors.push({ idx: i, dx, dy, dist });
+                    }
+                }
+
+                return neighbors;
+            }
+
+            step() {
+                if (!this.running) return;
+
+                const newVelocities = [];
+                const cfg = this.config;
+
+                for (let i = 0; i < this.boids.length; i++) {
+                    const boid = this.boids[i];
+                    const neighbors = this.getNeighbors(i);
+
+                    let dvx = 0, dvy = 0;
+
+                    if (neighbors.length > 0) {
+                        // Alignment
+                        let avgVx = 0, avgVy = 0;
+                        for (const n of neighbors) {
+                            avgVx += this.boids[n.idx].vx;
+                            avgVy += this.boids[n.idx].vy;
+                        }
+                        avgVx /= neighbors.length;
+                        avgVy /= neighbors.length;
+                        dvx += cfg.alignmentWeight * (avgVx - boid.vx);
+                        dvy += cfg.alignmentWeight * (avgVy - boid.vy);
+
+                        // Cohesion
+                        let cx = 0, cy = 0;
+                        for (const n of neighbors) {
+                            cx += n.dx;
+                            cy += n.dy;
+                        }
+                        cx /= neighbors.length;
+                        cy /= neighbors.length;
+                        dvx += cfg.cohesionWeight * cx * 0.1;
+                        dvy += cfg.cohesionWeight * cy * 0.1;
+
+                        // Separation
+                        for (const n of neighbors) {
+                            if (n.dist < cfg.separationRadius && n.dist > 0) {
+                                const factor = 1 / (n.dist * n.dist);
+                                dvx -= cfg.separationWeight * n.dx * factor;
+                                dvy -= cfg.separationWeight * n.dy * factor;
+                            }
+                        }
+                    }
+
+                    // Noise
+                    dvx += (Math.random() - 0.5) * 2 * cfg.noiseStd;
+                    dvy += (Math.random() - 0.5) * 2 * cfg.noiseStd;
+
+                    let nvx = boid.vx + dvx * cfg.dt;
+                    let nvy = boid.vy + dvy * cfg.dt;
+
+                    // Limit speed
+                    const speed = Math.sqrt(nvx * nvx + nvy * nvy);
+                    if (speed > cfg.maxSpeed) {
+                        nvx = nvx / speed * cfg.maxSpeed;
+                        nvy = nvy / speed * cfg.maxSpeed;
+                    }
+
+                    newVelocities.push({ vx: nvx, vy: nvy });
+                }
+
+                // Update positions and velocities
+                for (let i = 0; i < this.boids.length; i++) {
+                    this.boids[i].vx = newVelocities[i].vx;
+                    this.boids[i].vy = newVelocities[i].vy;
+                    this.boids[i].x = (this.boids[i].x + this.boids[i].vx * cfg.dt + cfg.worldSize) % cfg.worldSize;
+                    this.boids[i].y = (this.boids[i].y + this.boids[i].vy * cfg.dt + cfg.worldSize) % cfg.worldSize;
+                }
+
+                this.frame++;
+
+                // Record history
+                const metrics = this.computeMetrics();
+                this.history.push(metrics);
+                if (this.history.length > this.maxHistory) {
+                    this.history.shift();
+                }
+
+                return metrics;
+            }
+
+            computeMetrics() {
+                let sumVx = 0, sumVy = 0;
+                let sumX = 0, sumY = 0;
+                let sumSpeed = 0;
+                let totalNeighbors = 0;
+
+                for (const boid of this.boids) {
+                    const speed = Math.sqrt(boid.vx * boid.vx + boid.vy * boid.vy);
+                    sumVx += boid.vx / (speed || 1);
+                    sumVy += boid.vy / (speed || 1);
+                    sumX += boid.x;
+                    sumY += boid.y;
+                    sumSpeed += speed;
+                }
+
+                const n = this.boids.length;
+                const polarization = Math.sqrt(sumVx * sumVx + sumVy * sumVy) / n;
+                const cx = sumX / n;
+                const cy = sumY / n;
+                const avgSpeed = sumSpeed / n;
+
+                // Dispersion
+                let sumDist = 0;
+                for (const boid of this.boids) {
+                    let dx = boid.x - cx;
+                    let dy = boid.y - cy;
+                    if (dx > this.config.worldSize / 2) dx -= this.config.worldSize;
+                    if (dx < -this.config.worldSize / 2) dx += this.config.worldSize;
+                    if (dy > this.config.worldSize / 2) dy -= this.config.worldSize;
+                    if (dy < -this.config.worldSize / 2) dy += this.config.worldSize;
+                    sumDist += Math.sqrt(dx * dx + dy * dy);
+                }
+                const dispersion = sumDist / n;
+
+                // Average neighbors
+                for (let i = 0; i < Math.min(10, n); i++) {
+                    totalNeighbors += this.getNeighbors(i).length;
+                }
+                const avgNeighbors = totalNeighbors / Math.min(10, n);
+
+                // Rough TEΔ estimate based on polarization trend
+                let teDelta = 0;
+                if (this.history.length >= 10) {
+                    const recent = this.history.slice(-10);
+                    const oldPol = recent.slice(0, 5).reduce((a, b) => a + b.polarization, 0) / 5;
+                    const newPol = recent.slice(-5).reduce((a, b) => a + b.polarization, 0) / 5;
+                    teDelta = (polarization - 0.5) * 0.5 + (newPol - oldPol) * 2;
+                }
+
+                return {
+                    polarization,
+                    centroidX: cx,
+                    centroidY: cy,
+                    dispersion,
+                    avgSpeed,
+                    avgNeighbors,
+                    teDelta: Math.max(0, teDelta)
+                };
+            }
+
+            draw() {
+                const ctx = this.ctx;
+                const s = this.scale;
+                const alpha = this.config.alignmentWeight;
+
+                // Clear
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Draw boids
+                for (const boid of this.boids) {
+                    const x = boid.x * s;
+                    const y = boid.y * s;
+                    const angle = Math.atan2(boid.vy, boid.vx);
+                    const speed = Math.sqrt(boid.vx * boid.vx + boid.vy * boid.vy);
+
+                    // Color based on alignment with group
+                    const metrics = this.history[this.history.length - 1];
+                    const pol = metrics ? metrics.polarization : 0.5;
+
+                    // Interpolate between purple (low alignment) and green (high alignment)
+                    const r = Math.floor(99 - 99 * pol + 34 * pol);
+                    const g = Math.floor(102 - 102 * pol + 197 * pol);
+                    const b = Math.floor(241 - 241 * pol + 94 * pol);
+                    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.rotate(angle);
+
+                    // Draw triangle
+                    const size = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(size * 2, 0);
+                    ctx.lineTo(-size, size);
+                    ctx.lineTo(-size, -size);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.restore();
+                }
+
+                // Draw info
+                ctx.fillStyle = '#fff';
+                ctx.font = '12px monospace';
+                ctx.fillText(`α = ${alpha.toFixed(1)}`, 10, 20);
+                ctx.fillText(`Frame: ${this.frame}`, 10, 35);
+            }
+        }
+
+        // Initialize
+        const canvas = document.getElementById('boidsCanvas');
+        const sim = new BoidsSimulation(canvas);
+
+        // Metrics chart
+        const metricsCtx = document.getElementById('metricsChart').getContext('2d');
+        const metricsChart = new Chart(metricsCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Polarization',
+                        data: [],
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'TEΔ Estimate',
+                        data: [],
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        display: false
+                    },
+                    y: {
+                        min: 0,
+                        max: 1,
+                        grid: {
+                            color: '#2a2a3a'
+                        },
+                        ticks: {
+                            color: '#888'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#888'
+                        }
+                    }
+                },
+                animation: {
+                    duration: 0
+                }
+            }
+        });
+
+        // Controls
+        const alphaSlider = document.getElementById('alphaSlider');
+        const alphaValue = document.getElementById('alphaValue');
+        const boidsSlider = document.getElementById('boidsSlider');
+        const boidsValue = document.getElementById('boidsValue');
+        const resetBtn = document.getElementById('resetBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+
+        alphaSlider.addEventListener('input', () => {
+            const val = parseFloat(alphaSlider.value);
+            alphaValue.textContent = val.toFixed(1);
+            sim.config.alignmentWeight = val;
+        });
+
+        boidsSlider.addEventListener('input', () => {
+            const val = parseInt(boidsSlider.value);
+            boidsValue.textContent = val;
+            sim.setNBoids(val);
+        });
+
+        resetBtn.addEventListener('click', () => {
+            sim.reset();
+            metricsChart.data.labels = [];
+            metricsChart.data.datasets[0].data = [];
+            metricsChart.data.datasets[1].data = [];
+            metricsChart.update();
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            sim.running = !sim.running;
+            pauseBtn.textContent = sim.running ? 'Pause' : 'Resume';
+        });
+
+        // Tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab + 'Tab').classList.add('active');
+            });
+        });
+
+        // Load results
+        const fileInput = document.getElementById('fileInput');
+        const loadResultsBtn = document.getElementById('loadResultsBtn');
+        const resultsContent = document.getElementById('resultsContent');
+
+        loadResultsBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                const text = await file.text();
+                let data;
+
+                if (file.name.endsWith('.json')) {
+                    data = JSON.parse(text);
+                } else if (file.name.endsWith('.csv')) {
+                    // Parse CSV
+                    const lines = text.trim().split('\n');
+                    const headers = lines[0].split(',');
+                    data = lines.slice(1).map(line => {
+                        const values = line.split(',');
+                        const obj = {};
+                        headers.forEach((h, i) => obj[h.trim()] = parseFloat(values[i]) || values[i]);
+                        return obj;
+                    });
+                }
+
+                displayResults(data);
+            } catch (err) {
+                resultsContent.innerHTML = `<p style="color: #ef4444;">Error loading file: ${err.message}</p>`;
+            }
+        });
+
+        function displayResults(data) {
+            // Check if it's plot_data.json format
+            if (data.alphas && data.te_delta) {
+                const analysis = data.analysis || {};
+
+                let html = `
+                    <div class="info-row">
+                        <span class="info-label">Data points</span>
+                        <span class="info-value">${data.alphas.length}</span>
+                    </div>
+                `;
+
+                if (analysis.verdict) {
+                    const verdictClass = analysis.verdict === 'FCC_SUPPORTED' ? 'supported' :
+                                        analysis.verdict === 'FCC_WEAK' ? 'weak' : 'falsified';
+                    html += `
+                        <div class="verdict ${verdictClass}">
+                            <strong>${analysis.verdict}</strong>
+                            ${analysis.critical_alpha ? `<br>Critical α: ${analysis.critical_alpha.toFixed(3)}` : ''}
+                            ${analysis.p_value ? `<br>p-value: ${analysis.p_value.toFixed(4)}` : ''}
+                            ${analysis.effect_size ? `<br>Cohen's d: ${analysis.effect_size.toFixed(3)}` : ''}
+                        </div>
+                    `;
+                }
+
+                if (data.critical_point && data.critical_point.alpha) {
+                    html += `
+                        <div class="info-row">
+                            <span class="info-label">Critical α</span>
+                            <span class="info-value">${data.critical_point.alpha.toFixed(3)}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Jump magnitude</span>
+                            <span class="info-value">${data.critical_point.magnitude.toFixed(4)}</span>
+                        </div>
+                    `;
+                }
+
+                resultsContent.innerHTML = html;
+
+                // Update chart with results
+                metricsChart.data.labels = data.alphas.map(a => a.toFixed(1));
+                metricsChart.data.datasets[0].data = data.polarization || data.te_delta.mean.map(() => 0);
+                metricsChart.data.datasets[1].data = data.te_delta.mean;
+                metricsChart.options.scales.x.display = true;
+                metricsChart.options.scales.x.title = { display: true, text: 'α', color: '#888' };
+                metricsChart.update();
+            } else {
+                resultsContent.innerHTML = `<p>Loaded ${Array.isArray(data) ? data.length : 'unknown'} data points</p>`;
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            const metrics = sim.step();
+            sim.draw();
+
+            if (metrics) {
+                // Update metric displays
+                document.getElementById('polarizationValue').textContent = metrics.polarization.toFixed(3);
+                document.getElementById('teDeltaValue').textContent = metrics.teDelta.toFixed(3);
+                document.getElementById('dispersionValue').textContent = metrics.dispersion.toFixed(1);
+                document.getElementById('frameCount').textContent = sim.frame;
+                document.getElementById('avgSpeed').textContent = metrics.avgSpeed.toFixed(2);
+                document.getElementById('avgNeighbors').textContent = metrics.avgNeighbors.toFixed(1);
+                document.getElementById('centroid').textContent =
+                    `(${metrics.centroidX.toFixed(1)}, ${metrics.centroidY.toFixed(1)})`;
+
+                // Update chart (every 5 frames)
+                if (sim.frame % 5 === 0 && sim.history.length > 0) {
+                    const recent = sim.history.slice(-100);
+                    metricsChart.data.labels = recent.map((_, i) => i);
+                    metricsChart.data.datasets[0].data = recent.map(m => m.polarization);
+                    metricsChart.data.datasets[1].data = recent.map(m => m.teDelta);
+                    metricsChart.options.scales.x.display = false;
+                    metricsChart.update();
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

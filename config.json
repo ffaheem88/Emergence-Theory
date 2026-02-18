@@ -1,0 +1,8 @@
+{
+  "models": {
+    "theorist": "google/gemini-3-flash-preview",
+    "critic": "google/gemini-3-flash-preview",
+    "empiricist": "openai/gpt-5-mini",
+    "synthesizer": "openai/gpt-5-mini"
+  }
+}

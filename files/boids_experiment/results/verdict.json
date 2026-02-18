@@ -1,0 +1,11 @@
+{
+  "verdict": "FCC_SUPPORTED",
+  "critical_alpha": 0.04,
+  "predictability_before": 0.13004179529605273,
+  "predictability_after": 0.7795888964602796,
+  "effect_size_cohens_d": 1.5157340193939755,
+  "method": "classification-based macro state (n_flocks, mode, coherence)",
+  "n_boids": 500,
+  "n_runs_per_alpha": 12,
+  "interpretation": "Discontinuous jump in macro-state predictability at critical \u03b1 confirms FCC prediction: emergence = phase transition where macro level develops autonomous dynamics"
+}

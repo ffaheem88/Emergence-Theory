@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FCC Emergence Visualization - Boids Phase Transition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0d1117;
+            color: #e6edf3;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
+            padding: 15px 25px;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.3rem;
+            color: #58a6ff;
+        }
+
+        .header .subtitle {
+            color: #8b949e;
+            font-size: 0.85rem;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 10px;
+        }
+
+        .mode-btn {
+            padding: 8px 16px;
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .mode-btn:hover {
+            background: #30363d;
+        }
+
+        .mode-btn.active {
+            background: #238636;
+            border-color: #238636;
+            color: white;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+
+        .main-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            gap: 15px;
+        }
+
+        .canvas-row {
+            display: flex;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .canvas-container {
+            flex: 1;
+            background: #161b22;
+            border-radius: 12px;
+            border: 1px solid #30363d;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .canvas-container.single {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .canvas-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            z-index: 10;
+        }
+
+        .canvas-label .alpha {
+            color: #58a6ff;
+            font-weight: 600;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .side-panel {
+            width: 320px;
+            background: #161b22;
+            border-left: 1px solid #30363d;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        .panel-section {
+            background: #0d1117;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #30363d;
+        }
+
+        .panel-section h3 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8b949e;
+            margin-bottom: 12px;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .control-row label {
+            font-size: 0.85rem;
+            color: #c9d1d9;
+            min-width: 80px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #30363d;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #58a6ff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .value-badge {
+            background: #21262d;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #58a6ff;
+            min-width: 45px;
+            text-align: center;
+        }
+
+        .macro-state {
+            background: #21262d;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .macro-state .label {
+            color: #8b949e;
+            font-size: 0.75rem;
+        }
+
+        .macro-state .value {
+            color: #7ee787;
+        }
+
+        .macro-state .value.warning {
+            color: #f0883e;
+        }
+
+        .state-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .state-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            background: #21262d;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+
+        .state-item .time {
+            color: #8b949e;
+            min-width: 40px;
+        }
+
+        .state-item .state {
+            color: #c9d1d9;
+        }
+
+        .state-item.transition {
+            border-left: 3px solid #f0883e;
+        }
+
+        .predictability-display {
+            text-align: center;
+            padding: 15px;
+        }
+
+        .predictability-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            font-family: monospace;
+        }
+
+        .predictability-value.low { color: #f85149; }
+        .predictability-value.medium { color: #f0883e; }
+        .predictability-value.high { color: #7ee787; }
+
+        .predictability-label {
+            color: #8b949e;
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 10px;
+            background: #21262d;
+            border-radius: 6px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background: #30363d;
+        }
+
+        .btn.primary {
+            background: #238636;
+            border-color: #238636;
+        }
+
+        .btn.primary:hover {
+            background: #2ea043;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-box {
+            background: #21262d;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-box .value {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #58a6ff;
+        }
+
+        .stat-box .label {
+            font-size: 0.7rem;
+            color: #8b949e;
+            margin-top: 2px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>FCC Emergence Visualization</h1>
+            <div class="subtitle">Phase Transition in Boids: Classification-Based Macro State</div>
+        </div>
+        <div class="mode-toggle">
+            <button class="mode-btn active" id="singleModeBtn">Single View</button>
+            <button class="mode-btn" id="compareModeBtn">Side-by-Side</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="main-view">
+            <div class="canvas-row">
+                <div class="canvas-container" id="canvasContainer1">
+                    <div class="canvas-label">
+                        <span class="alpha" id="label1">α = 0.00</span>
+                        <span id="modeLabel1"></span>
+                    </div>
+                    <canvas id="canvas1"></canvas>
+                </div>
+                <div class="canvas-container hidden" id="canvasContainer2">
+                    <div class="canvas-label">
+                        <span class="alpha" id="label2">α = 0.10</span>
+                        <span id="modeLabel2"></span>
+                    </div>
+                    <canvas id="canvas2"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="side-panel">
+            <div class="panel-section">
+                <h3>Controls</h3>
+                <div class="control-row">
+                    <label>α (Align)</label>
+                    <input type="range" id="alphaSlider" min="0" max="1" step="0.01" value="0.05">
+                    <span class="value-badge" id="alphaValue">0.05</span>
+                </div>
+                <div class="control-row" id="alpha2Control">
+                    <label>α₂ (Right)</label>
+                    <input type="range" id="alpha2Slider" min="0" max="1" step="0.01" value="0.10">
+                    <span class="value-badge" id="alpha2Value">0.10</span>
+                </div>
+                <div class="control-row">
+                    <label>Separation</label>
+                    <input type="range" id="separationSlider" min="0" max="3" step="0.1" value="1">
+                    <span class="value-badge" id="separationValue">1.0</span>
+                </div>
+                <div class="control-row">
+                    <label>Boids</label>
+                    <input type="range" id="boidsSlider" min="100" max="800" step="50" value="400">
+                    <span class="value-badge" id="boidsValue">400</span>
+                </div>
+                <div class="control-row">
+                    <label>Noise</label>
+                    <input type="range" id="noiseSlider" min="0" max="1" step="0.05" value="0.1">
+                    <span class="value-badge" id="noiseValue">0.10</span>
+                </div>
+                <div class="control-row">
+                    <label>Speed</label>
+                    <input type="range" id="speedSlider" min="1" max="10" step="1" value="1">
+                    <span class="value-badge" id="speedValue">1x</span>
+                </div>
+                <div class="btn-row">
+                    <button class="btn" id="resetBtn">Reset</button>
+                    <button class="btn primary" id="pauseBtn">Pause</button>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>Current Macro State</h3>
+                <div class="macro-state" id="macroState1">
+                    <div><span class="label">Flocks:</span> <span class="value" id="nFlocks1">-</span></div>
+                    <div><span class="label">Mode:</span> <span class="value" id="mode1">-</span></div>
+                    <div><span class="label">Coherence:</span> <span class="value" id="coherence1">-</span></div>
+                    <div><span class="label">Polarization:</span> <span class="value" id="pol1">-</span></div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>Emergence Metric</h3>
+                <div class="predictability-display">
+                    <div class="predictability-value low" id="predValue">0.00</div>
+                    <div class="predictability-label">Macro-State Predictability (bits)</div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="value" id="transitionCount">0</div>
+                        <div class="label">Transitions</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="value" id="uniqueStates">0</div>
+                        <div class="label">Unique States</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>State Timeline</h3>
+                <div class="state-timeline" id="stateTimeline">
+                    <!-- States will be added here -->
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>Flock Legend</h3>
+                <div class="legend" id="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #58a6ff;"></div>
+                        <span>Flock 1</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f85149;"></div>
+                        <span>Flock 2</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #7ee787;"></div>
+                        <span>Flock 3</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f0883e;"></div>
+                        <span>Flock 4+</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #8b949e;"></div>
+                        <span>Noise</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== BOIDS SIMULATION =====
+        class BoidSimulation {
+            constructor(canvas, config = {}) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.config = {
+                    nBoids: config.nBoids || 400,
+                    worldSize: config.worldSize || 200,
+                    maxSpeed: 2.0,
+                    perceptionRadius: 15,
+                    alignmentWeight: config.alpha || 0.05,
+                    cohesionWeight: 0,
+                    separationWeight: 1.0,
+                    separationRadius: 3,
+                    noiseStd: 0.1
+                };
+
+                this.boids = [];
+                this.flockLabels = [];
+                this.macroState = null;
+                this.stateHistory = [];
+                this.transitionLog = [];
+                this.running = true;
+
+                this.resize();
+                this.reset();
+            }
+
+            resize() {
+                const rect = this.canvas.parentElement.getBoundingClientRect();
+                this.canvas.width = rect.width;
+                this.canvas.height = rect.height;
+                // Use separate scales to fill entire canvas
+                this.scaleX = this.canvas.width / this.config.worldSize;
+                this.scaleY = this.canvas.height / this.config.worldSize;
+            }
+
+            reset() {
+                const n = this.config.nBoids;
+                const ws = this.config.worldSize;
+
+                this.boids = [];
+                for (let i = 0; i < n; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = (0.5 + Math.random() * 0.5) * this.config.maxSpeed;
+                    this.boids.push({
+                        x: Math.random() * ws,
+                        y: Math.random() * ws,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed
+                    });
+                }
+
+                this.flockLabels = new Array(n).fill(0);
+                this.stateHistory = [];
+                this.transitionLog = [];
+            }
+
+            setNBoids(n) {
+                this.config.nBoids = n;
+                this.reset();
+            }
+
+            // Simple distance (no wrapping with reflective boundaries)
+            dist(a, b) {
+                return a - b;
+            }
+
+            step() {
+                if (!this.running) return;
+
+                const { nBoids, worldSize, maxSpeed, perceptionRadius, alignmentWeight,
+                        cohesionWeight, separationWeight, separationRadius, noiseStd } = this.config;
+                const ws = worldSize;
+
+                // Build spatial grid
+                const cellSize = perceptionRadius;
+                const gridSize = Math.ceil(ws / cellSize);
+                const grid = {};
+
+                for (let i = 0; i < nBoids; i++) {
+                    const cx = Math.floor(this.boids[i].x / cellSize) % gridSize;
+                    const cy = Math.floor(this.boids[i].y / cellSize) % gridSize;
+                    const hash = cx * gridSize + cy;
+                    if (!grid[hash]) grid[hash] = [];
+                    grid[hash].push(i);
+                }
+
+                const newVelocities = [];
+
+                for (let i = 0; i < nBoids; i++) {
+                    const boid = this.boids[i];
+                    const cx = Math.floor(boid.x / cellSize) % gridSize;
+                    const cy = Math.floor(boid.y / cellSize) % gridSize;
+
+                    let neighbors = [];
+                    for (let dx = -1; dx <= 1; dx++) {
+                        for (let dy = -1; dy <= 1; dy++) {
+                            const nx = (cx + dx + gridSize) % gridSize;
+                            const ny = (cy + dy + gridSize) % gridSize;
+                            const hash = nx * gridSize + ny;
+                            if (grid[hash]) neighbors = neighbors.concat(grid[hash]);
+                        }
+                    }
+
+                    let ax = 0, ay = 0;
+                    let alignX = 0, alignY = 0, alignCount = 0;
+                    let sepX = 0, sepY = 0;
+
+                    for (const j of neighbors) {
+                        if (j === i) continue;
+
+                        const other = this.boids[j];
+                        let dx = other.x - boid.x;
+                        let dy = other.y - boid.y;
+                        // Periodic distance
+                        if (dx > ws / 2) dx -= ws;
+                        if (dx < -ws / 2) dx += ws;
+                        if (dy > ws / 2) dy -= ws;
+                        if (dy < -ws / 2) dy += ws;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < perceptionRadius && dist > 0) {
+                            alignX += other.vx;
+                            alignY += other.vy;
+                            alignCount++;
+
+                            if (dist < separationRadius) {
+                                const factor = 1 / (dist * dist + 0.01);
+                                sepX -= dx * factor;
+                                sepY -= dy * factor;
+                            }
+                        }
+                    }
+
+                    if (alignCount > 0) {
+                        alignX /= alignCount;
+                        alignY /= alignCount;
+                        ax += alignmentWeight * (alignX - boid.vx);
+                        ay += alignmentWeight * (alignY - boid.vy);
+                    }
+
+                    ax += separationWeight * sepX;
+                    ay += separationWeight * sepY;
+
+                    ax += (Math.random() - 0.5) * 2 * noiseStd;
+                    ay += (Math.random() - 0.5) * 2 * noiseStd;
+
+                    let nvx = boid.vx + ax * 0.1;
+                    let nvy = boid.vy + ay * 0.1;
+
+                    const speed = Math.sqrt(nvx * nvx + nvy * nvy);
+                    if (speed > maxSpeed) {
+                        nvx = nvx / speed * maxSpeed;
+                        nvy = nvy / speed * maxSpeed;
+                    }
+
+                    newVelocities.push({ vx: nvx, vy: nvy });
+                }
+
+                for (let i = 0; i < nBoids; i++) {
+                    this.boids[i].vx = newVelocities[i].vx;
+                    this.boids[i].vy = newVelocities[i].vy;
+
+                    // Update position with periodic wraparound
+                    this.boids[i].x = (this.boids[i].x + this.boids[i].vx * 0.1 + ws) % ws;
+                    this.boids[i].y = (this.boids[i].y + this.boids[i].vy * 0.1 + ws) % ws;
+                }
+
+                this.classifyMacroState();
+            }
+
+            classifyMacroState() {
+                const { nBoids, worldSize } = this.config;
+                const ws = worldSize;
+
+                // Simple DBSCAN-like clustering
+                const eps = 0.25;
+                const minPts = 5;
+
+                // Normalize features
+                const features = this.boids.map(b => {
+                    const speed = Math.sqrt(b.vx * b.vx + b.vy * b.vy) || 1e-10;
+                    return {
+                        px: b.x / ws * 2,
+                        py: b.y / ws * 2,
+                        vx: b.vx / speed,
+                        vy: b.vy / speed
+                    };
+                });
+
+                // Simple clustering: assign based on velocity similarity
+                const labels = new Array(nBoids).fill(-1);
+                let clusterId = 0;
+
+                for (let i = 0; i < nBoids; i++) {
+                    if (labels[i] !== -1) continue;
+
+                    const cluster = [i];
+                    labels[i] = clusterId;
+
+                    for (let j = 0; j < cluster.length; j++) {
+                        const ci = cluster[j];
+                        for (let k = 0; k < nBoids; k++) {
+                            if (labels[k] !== -1) continue;
+
+                            const fi = features[ci];
+                            const fk = features[k];
+                            const dist = Math.sqrt(
+                                (fi.px - fk.px) ** 2 +
+                                (fi.py - fk.py) ** 2 +
+                                (fi.vx - fk.vx) ** 2 +
+                                (fi.vy - fk.vy) ** 2
+                            );
+
+                            if (dist < eps) {
+                                labels[k] = clusterId;
+                                cluster.push(k);
+                            }
+                        }
+                    }
+
+                    if (cluster.length < minPts) {
+                        for (const idx of cluster) labels[idx] = -1;
+                    } else {
+                        clusterId++;
+                    }
+                }
+
+                this.flockLabels = labels;
+                const nFlocks = Math.max(1, clusterId);
+
+                // Compute polarization
+                let sumVx = 0, sumVy = 0;
+                for (const b of this.boids) {
+                    const speed = Math.sqrt(b.vx * b.vx + b.vy * b.vy) || 1e-10;
+                    sumVx += b.vx / speed;
+                    sumVy += b.vy / speed;
+                }
+                const polarization = Math.sqrt(sumVx * sumVx + sumVy * sumVy) / nBoids;
+
+                // Classify mode
+                let mode = 'dispersed';
+                if (polarization > 0.6) {
+                    mode = 'migrating';
+                } else if (polarization > 0.3) {
+                    mode = 'forming';
+                }
+
+                // Coherence class
+                let coherence = 'low';
+                if (polarization > 0.6) coherence = 'high';
+                else if (polarization > 0.3) coherence = 'medium';
+
+                const stateKey = `${nFlocks}-${mode}-${coherence}`;
+
+                // Track state history
+                const prevState = this.stateHistory.length > 0 ?
+                    this.stateHistory[this.stateHistory.length - 1] : null;
+
+                if (!prevState || prevState.key !== stateKey) {
+                    const newState = {
+                        key: stateKey,
+                        nFlocks,
+                        mode,
+                        coherence,
+                        polarization,
+                        time: Date.now()
+                    };
+                    this.stateHistory.push(newState);
+
+                    if (prevState) {
+                        this.transitionLog.push({
+                            from: prevState.key,
+                            to: stateKey,
+                            time: Date.now()
+                        });
+                    }
+
+                    // Keep last 50 states
+                    if (this.stateHistory.length > 50) {
+                        this.stateHistory.shift();
+                    }
+                }
+
+                this.macroState = { nFlocks, mode, coherence, polarization };
+            }
+
+            computePredictability() {
+                if (this.transitionLog.length < 10) return 0;
+
+                const transitions = {};
+                const stateCounts = {};
+
+                for (const t of this.transitionLog) {
+                    const key = `${t.from}|${t.to}`;
+                    transitions[key] = (transitions[key] || 0) + 1;
+                    stateCounts[t.from] = (stateCounts[t.from] || 0) + 1;
+                }
+
+                const total = this.transitionLog.length;
+
+                // Marginal entropy
+                const nextCounts = {};
+                for (const t of this.transitionLog) {
+                    nextCounts[t.to] = (nextCounts[t.to] || 0) + 1;
+                }
+                let hMarginal = 0;
+                for (const count of Object.values(nextCounts)) {
+                    const p = count / total;
+                    hMarginal -= p * Math.log2(p + 1e-10);
+                }
+
+                // Conditional entropy
+                let hConditional = 0;
+                for (const [from, count] of Object.entries(stateCounts)) {
+                    const pFrom = count / total;
+                    let hCond = 0;
+                    for (const [key, tCount] of Object.entries(transitions)) {
+                        if (key.startsWith(from + '|')) {
+                            const p = tCount / count;
+                            hCond -= p * Math.log2(p + 1e-10);
+                        }
+                    }
+                    hConditional += pFrom * hCond;
+                }
+
+                return Math.max(0, hMarginal - hConditional);
+            }
+
+            getUniqueStates() {
+                return new Set(this.stateHistory.map(s => s.key)).size;
+            }
+
+            draw() {
+                const ctx = this.ctx;
+                const sx = this.scaleX;
+                const sy = this.scaleY;
+                const w = this.canvas.width;
+                const h = this.canvas.height;
+
+                ctx.fillStyle = '#0d1117';
+                ctx.fillRect(0, 0, w, h);
+
+                const flockColors = [
+                    '#58a6ff', '#f85149', '#7ee787', '#f0883e', '#a371f7',
+                    '#79c0ff', '#ffa657', '#d2a8ff'
+                ];
+                const noiseColor = '#8b949e';
+
+                // Draw boids as arrows
+                for (let i = 0; i < this.boids.length; i++) {
+                    const boid = this.boids[i];
+                    const label = this.flockLabels[i];
+                    const color = label >= 0 ? flockColors[label % flockColors.length] : noiseColor;
+
+                    const x = boid.x * sx;
+                    const y = boid.y * sy;
+                    const angle = Math.atan2(boid.vy, boid.vx);
+
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.rotate(angle);
+
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.moveTo(6, 0);
+                    ctx.lineTo(-4, 3);
+                    ctx.lineTo(-2, 0);
+                    ctx.lineTo(-4, -3);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.restore();
+                }
+            }
+        }
+
+        // ===== UI SETUP =====
+        let sim1, sim2;
+        let compareMode = false;
+        let frameCount = 0;
+        let simSpeed = 1;
+
+        const canvas1 = document.getElementById('canvas1');
+        const canvas2 = document.getElementById('canvas2');
+        const container1 = document.getElementById('canvasContainer1');
+        const container2 = document.getElementById('canvasContainer2');
+
+        function initSimulations() {
+            const nBoids = parseInt(document.getElementById('boidsSlider').value);
+            const alpha1 = parseFloat(document.getElementById('alphaSlider').value);
+            const alpha2 = parseFloat(document.getElementById('alpha2Slider').value);
+
+            sim1 = new BoidSimulation(canvas1, { nBoids, alpha: alpha1 });
+            sim2 = new BoidSimulation(canvas2, { nBoids, alpha: alpha2 });
+        }
+
+        function updateUI() {
+            if (!sim1) return;
+
+            // Update labels
+            document.getElementById('label1').textContent = `α = ${sim1.config.alignmentWeight.toFixed(2)}`;
+            if (compareMode) {
+                document.getElementById('label2').textContent = `α = ${sim2.config.alignmentWeight.toFixed(2)}`;
+            }
+
+            // Update macro state display
+            if (sim1.macroState) {
+                document.getElementById('nFlocks1').textContent = sim1.macroState.nFlocks;
+                document.getElementById('mode1').textContent = sim1.macroState.mode;
+                document.getElementById('coherence1').textContent = sim1.macroState.coherence;
+                document.getElementById('pol1').textContent = sim1.macroState.polarization.toFixed(3);
+
+                const coherenceEl = document.getElementById('coherence1');
+                coherenceEl.className = 'value' + (sim1.macroState.coherence === 'low' ? ' warning' : '');
+            }
+
+            // Update predictability
+            const pred = sim1.computePredictability();
+            const predEl = document.getElementById('predValue');
+            predEl.textContent = pred.toFixed(2);
+            predEl.className = 'predictability-value ' +
+                (pred < 0.3 ? 'low' : pred < 0.7 ? 'medium' : 'high');
+
+            document.getElementById('transitionCount').textContent = sim1.transitionLog.length;
+            document.getElementById('uniqueStates').textContent = sim1.getUniqueStates();
+
+            // Update timeline
+            const timeline = document.getElementById('stateTimeline');
+            const recentStates = sim1.stateHistory.slice(-10).reverse();
+            timeline.innerHTML = recentStates.map((s, i) => {
+                const isTransition = i < recentStates.length - 1 &&
+                    recentStates[i].key !== recentStates[i + 1]?.key;
+                return `
+                    <div class="state-item ${isTransition ? 'transition' : ''}">
+                        <span class="time">${i === 0 ? 'now' : '-' + i}</span>
+                        <span class="state">${s.nFlocks}F | ${s.mode} | ${s.coherence}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function animate() {
+            // Run multiple steps based on speed setting
+            for (let i = 0; i < simSpeed; i++) {
+                if (sim1) {
+                    sim1.step();
+                }
+                if (compareMode && sim2) {
+                    sim2.step();
+                }
+            }
+
+            // Draw once per frame
+            if (sim1) sim1.draw();
+            if (compareMode && sim2) sim2.draw();
+
+            frameCount++;
+            if (frameCount % 10 === 0) {
+                updateUI();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Event listeners
+        document.getElementById('alphaSlider').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('alphaValue').textContent = val.toFixed(2);
+            if (sim1) sim1.config.alignmentWeight = val;
+        });
+
+        document.getElementById('alpha2Slider').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('alpha2Value').textContent = val.toFixed(2);
+            if (sim2) sim2.config.alignmentWeight = val;
+        });
+
+        document.getElementById('boidsSlider').addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            document.getElementById('boidsValue').textContent = val;
+        });
+
+        document.getElementById('boidsSlider').addEventListener('change', (e) => {
+            const val = parseInt(e.target.value);
+            if (sim1) sim1.setNBoids(val);
+            if (sim2) sim2.setNBoids(val);
+        });
+
+        document.getElementById('separationSlider').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('separationValue').textContent = val.toFixed(1);
+            if (sim1) sim1.config.separationWeight = val;
+            if (sim2) sim2.config.separationWeight = val;
+        });
+
+        document.getElementById('noiseSlider').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('noiseValue').textContent = val.toFixed(2);
+            if (sim1) sim1.config.noiseStd = val;
+            if (sim2) sim2.config.noiseStd = val;
+        });
+
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            simSpeed = parseInt(e.target.value);
+            document.getElementById('speedValue').textContent = simSpeed + 'x';
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            if (sim1) sim1.reset();
+            if (sim2) sim2.reset();
+        });
+
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+            const btn = document.getElementById('pauseBtn');
+            if (sim1) sim1.running = !sim1.running;
+            if (sim2) sim2.running = !sim2.running;
+            btn.textContent = sim1?.running ? 'Pause' : 'Resume';
+        });
+
+        document.getElementById('singleModeBtn').addEventListener('click', () => {
+            compareMode = false;
+            container1.classList.remove('single');
+            container2.classList.add('hidden');
+            document.getElementById('singleModeBtn').classList.add('active');
+            document.getElementById('compareModeBtn').classList.remove('active');
+            document.getElementById('alpha2Control').classList.add('hidden');
+            setTimeout(() => sim1?.resize(), 100);
+        });
+
+        document.getElementById('compareModeBtn').addEventListener('click', () => {
+            compareMode = true;
+            container2.classList.remove('hidden');
+            document.getElementById('singleModeBtn').classList.remove('active');
+            document.getElementById('compareModeBtn').classList.add('active');
+            document.getElementById('alpha2Control').classList.remove('hidden');
+
+            // Set comparison values
+            document.getElementById('alphaSlider').value = 0;
+            document.getElementById('alphaValue').textContent = '0.00';
+            document.getElementById('alpha2Slider').value = 0.10;
+            document.getElementById('alpha2Value').textContent = '0.10';
+
+            if (sim1) sim1.config.alignmentWeight = 0;
+            if (sim2) sim2.config.alignmentWeight = 0.10;
+
+            setTimeout(() => {
+                sim1?.resize();
+                sim2?.resize();
+            }, 100);
+        });
+
+        // Initialize
+        document.getElementById('alpha2Control').classList.add('hidden');
+        initSimulations();
+        animate();
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            sim1?.resize();
+            sim2?.resize();
+        });
+    </script>
+</body>
+</html>
