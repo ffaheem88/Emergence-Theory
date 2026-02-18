@@ -175,7 +175,7 @@ def run_quick_test(boids_config: BoidsConfig, output_dir: Path):
 def main():
     parser = argparse.ArgumentParser(description='FCC Falsification Test: Boids Simulation')
     parser.add_argument('--config', default='config.yaml', help='Configuration file')
-    parser.add_argument('--output-dir', default='results', help='Output directory')
+    parser.add_argument('--output-dir', default=None, help='Output directory (default: auto-versioned results/run_YYYYMMDD_HHMMSS/)')
     parser.add_argument('--quick', action='store_true', help='Run quick test only')
     parser.add_argument('--workers', type=int, default=None, help='Number of parallel workers')
     args = parser.parse_args()
@@ -187,14 +187,30 @@ def main():
     if args.workers is not None:
         sweep_config.n_workers = args.workers
 
-    # Create output directory
-    output_dir = Path(args.output_dir)
-    output_dir.mkdir(exist_ok=True)
+    # Create output directory — versioned by default
+    if args.output_dir is not None:
+        output_dir = Path(args.output_dir)
+    else:
+        run_id = datetime.now().strftime('run_%Y%m%d_%H%M%S')
+        output_dir = Path('results') / run_id
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    print(f"Output directory: {output_dir}")
 
     if args.quick:
         run_quick_test(boids_config, output_dir)
     else:
         run_full_experiment(boids_config, sweep_config, output_dir)
+
+    # Update results/latest symlink to point to this run
+    latest_link = Path('results') / 'latest'
+    try:
+        if latest_link.exists() or latest_link.is_symlink():
+            latest_link.unlink()
+        latest_link.symlink_to(output_dir.resolve())
+        print(f"results/latest → {output_dir}")
+    except Exception as e:
+        print(f"(Note: could not update results/latest symlink: {e})")
 
 
 if __name__ == '__main__':
