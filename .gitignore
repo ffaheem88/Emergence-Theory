@@ -1,0 +1,5 @@
+files/boids_experiment/venv/
+files/boids_experiment/__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo

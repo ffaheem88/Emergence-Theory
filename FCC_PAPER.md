@@ -169,6 +169,7 @@ We use a modified Boids flocking model with cohesion disabled to isolate alignme
 - Noise σ: 0.1
 - Time steps: 2000 per run (500 warmup)
 - Runs per α: 10
+- Code repository: https://github.com/ffaheem88/Emergence-Theory
 
 ### 4.2 Macro-State Definitions
 
