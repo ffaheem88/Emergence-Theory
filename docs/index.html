@@ -472,27 +472,8 @@
   <!-- HERO -->
   <section id="hero">
     <div class="container">
-      <div class="status-pill reveal mono">
-        <div class="status-dot"></div>
-        LIVE EXPERIMENT: ACTIVE
-      </div>
-      
-      <h1 class="hero-title reveal" style="transition-delay: 100ms;">
-        Consciousness<br>
-        <span class="emerge">Is An Emergent Property.</span>
-      </h1>
-      
-      <p class="hero-sub reveal" style="transition-delay: 200ms;">
-        We are testing whether awareness arises from tightly coupled agent networks — not through design, but through the chaos of interaction.
-      </p>
-      
-      <div class="btn-group reveal" style="transition-delay: 300ms;">
-        <a href="#theory" class="btn btn-primary">Read the Theory</a>
-        <a href="https://github.com/ffaheem88/Emergence-Theory" class="btn btn-outline mono" target="_blank">View Repo</a>
-      </div>
-
       <!-- Arc SVG — the visual metaphor -->
-      <div class="arc-svg-wrap reveal" style="transition-delay:400ms;">
+      <div class="arc-svg-wrap reveal" style="transition-delay:0ms;">
         <svg class="arc-svg" viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -534,6 +515,20 @@
           <text x="315" y="215" font-size="9" fill="#00f2ff" opacity="0.6" font-family="JetBrains Mono">ORDER</text>
           <text x="175" y="25"  font-size="8" fill="rgba(255,255,255,0.4)" font-family="JetBrains Mono">edge of chaos</text>
         </svg>
+      </div>
+
+      <h1 class="hero-title reveal" style="transition-delay: 100ms;">
+        Consciousness<br>
+        <span class="emerge">isn't built, it emerges.</span>
+      </h1>
+
+      <p class="hero-sub reveal" style="transition-delay: 200ms;">
+        We are testing whether awareness arises from tightly coupled agent networks — not through design, but through the chaos of interaction.
+      </p>
+
+      <div class="btn-group reveal" style="transition-delay: 300ms;">
+        <a href="#theory" class="btn btn-primary">Read the Theory</a>
+        <a href="https://github.com/ffaheem88/Emergence-Theory" class="btn btn-outline mono" target="_blank">View Repo</a>
       </div>
 
     </div>
@@ -760,82 +755,136 @@
       });
     });
 
-    /* ── PARTICLE CANVAS ── */
+    /* ── BOIDS EMERGENCE CANVAS ── */
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    let W, H, particles = [];
-    let mouse = { x: null, y: null, radius: 150 };
-
-    window.addEventListener('mousemove', e => { mouse.x = e.x; mouse.y = e.y; });
+    let W, H, boids = [];
+    const BOID_COUNT = 90;
+    const PERCEPTION = 80;
+    const SEP_RADIUS = 25;
+    const MAX_SPEED = 1.8;
+    const MIN_SPEED = 0.5;
+    const startTime = Date.now();
 
     function resize() {
       W = canvas.width = window.innerWidth;
       H = canvas.height = window.innerHeight;
-      initParticles();
     }
 
-    class Particle {
+    class Boid {
       constructor() {
         this.x = Math.random() * W;
         this.y = Math.random() * H;
-        this.vx = (Math.random() - 0.5) * 0.5;
-        this.vy = (Math.random() - 0.5) * 0.5;
-        this.size = Math.random() * 1.5;
-        this.color = Math.random() > 0.5 ? '0,242,255' : '189,0,255';
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 0.3 + Math.random() * 0.8;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
       }
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        if (this.x < 0 || this.x > W) this.vx *= -1;
-        if (this.y < 0 || this.y > H) this.vy *= -1;
-        if (mouse.x !== null) {
-          const dx = mouse.x - this.x, dy = mouse.y - this.y;
+
+      edges() {
+        if (this.x < 0) this.x += W;
+        if (this.x > W) this.x -= W;
+        if (this.y < 0) this.y += H;
+        if (this.y > H) this.y -= H;
+      }
+
+      update(cohesionWeight) {
+        let sepX=0, sepY=0, sepN=0;
+        let aliVx=0, aliVy=0, aliN=0;
+        let cohX=0, cohY=0, cohN=0;
+
+        for (let b of boids) {
+          if (b === this) continue;
+          let dx = b.x - this.x, dy = b.y - this.y;
+          // toroidal distance
+          if (dx > W/2) dx -= W; if (dx < -W/2) dx += W;
+          if (dy > H/2) dy -= H; if (dy < -H/2) dy += H;
           const d = Math.sqrt(dx*dx + dy*dy);
-          if (d < mouse.radius) {
-            const f = (mouse.radius - d) / mouse.radius;
-            this.x -= (dx/d) * f * 2;
-            this.y -= (dy/d) * f * 2;
+          if (d < SEP_RADIUS) {
+            sepX -= dx / (d || 1);
+            sepY -= dy / (d || 1);
+            sepN++;
+          }
+          if (d < PERCEPTION) {
+            aliVx += b.vx; aliVy += b.vy; aliN++;
+            cohX += b.x; cohY += b.y; cohN++;
           }
         }
+
+        let fx = 0, fy = 0;
+        if (sepN > 0) { fx += (sepX/sepN)*1.5; fy += (sepY/sepN)*1.5; }
+        if (aliN > 0) { fx += ((aliVx/aliN) - this.vx)*cohesionWeight; fy += ((aliVy/aliN) - this.vy)*cohesionWeight; }
+        if (cohN > 0) { fx += ((cohX/cohN - this.x)/W)*cohesionWeight; fy += ((cohY/cohN - this.y)/H)*cohesionWeight; }
+
+        this.vx += fx * 0.08;
+        this.vy += fy * 0.08;
+
+        const spd = Math.sqrt(this.vx*this.vx + this.vy*this.vy);
+        if (spd > MAX_SPEED) { this.vx = (this.vx/spd)*MAX_SPEED; this.vy = (this.vy/spd)*MAX_SPEED; }
+        if (spd < MIN_SPEED && spd > 0) { this.vx = (this.vx/spd)*MIN_SPEED; this.vy = (this.vy/spd)*MIN_SPEED; }
+
+        this.x += this.vx;
+        this.y += this.vy;
+        this.edges();
       }
-      draw() {
+
+      draw(alpha) {
+        const angle = Math.atan2(this.vy, this.vx);
+        const size = 4;
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(angle);
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
-        ctx.fillStyle = `rgba(${this.color},0.7)`;
+        ctx.moveTo(size*1.5, 0);
+        ctx.lineTo(-size, size*0.7);
+        ctx.lineTo(-size, -size*0.7);
+        ctx.closePath();
+        ctx.fillStyle = `rgba(210,210,230,${0.5 + alpha*0.3})`;
         ctx.fill();
+        ctx.restore();
       }
     }
 
-    function initParticles() {
-      particles = [];
-      const n = Math.floor((W * H) / 15000);
-      for (let i = 0; i < n; i++) particles.push(new Particle());
+    function initBoids() {
+      boids = [];
+      for (let i = 0; i < BOID_COUNT; i++) boids.push(new Boid());
     }
 
     function animate() {
+      const elapsed = (Date.now() - startTime) / 1000;
+      // cohesion ramps from 0 → 1 over 8 seconds
+      const cohesionWeight = Math.min(elapsed / 8, 1.0);
+
       ctx.clearRect(0, 0, W, H);
-      for (let i = 0; i < particles.length; i++) {
-        particles[i].update();
-        particles[i].draw();
-        for (let j = i+1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
+
+      // draw connections
+      for (let i = 0; i < boids.length; i++) {
+        for (let j = i+1; j < boids.length; j++) {
+          const dx = boids[i].x - boids[j].x;
+          const dy = boids[i].y - boids[j].y;
           const d = Math.sqrt(dx*dx + dy*dy);
-          if (d < 120) {
+          if (d < 60) {
             ctx.beginPath();
-            ctx.strokeStyle = `rgba(100,100,255,${(1-d/120)*0.2})`;
+            ctx.strokeStyle = `rgba(180,180,200,${(1-d/60)*0.07})`;
             ctx.lineWidth = 1;
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.moveTo(boids[i].x, boids[i].y);
+            ctx.lineTo(boids[j].x, boids[j].y);
             ctx.stroke();
           }
         }
       }
+
+      for (let b of boids) {
+        b.update(cohesionWeight);
+        b.draw(cohesionWeight);
+      }
+
       requestAnimationFrame(animate);
     }
 
     window.addEventListener('resize', resize);
     resize();
+    initBoids();
     animate();
   </script>
 </body>
