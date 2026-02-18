@@ -3,843 +3,840 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ARC — Agents Reaching Consciousness</title>
+  <title>ARC — Emergence Event</title>
   <meta name="description" content="A live experiment testing whether consciousness is an emergent property of tightly coupled AI agent networks.">
-  <meta property="og:title" content="ARC — Agents Reaching Consciousness">
-  <meta property="og:description" content="A live experiment testing whether consciousness is an emergent property of tightly coupled AI agent networks.">
-  <meta property="og:type" content="website">
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  
   <style>
+    /* ── RESET & VARS ── */
+    :root {
+      --bg-deep: #030304;
+      --bg-surface: #0a0a0f;
+      
+      /* The Neon Palette */
+      --primary: #00f2ff;    /* Cyan */
+      --primary-dim: rgba(0, 242, 255, 0.1);
+      --secondary: #bd00ff;  /* Violet */
+      --secondary-dim: rgba(189, 0, 255, 0.1);
+      --accent: #00ff9d;     /* Matrix Green */
+      
+      --text-main: #ffffff;
+      --text-muted: #8892b0;
+      
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-shine: rgba(255, 255, 255, 0.03);
+      
+      --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --bg: #060608;
-      --surface: #0d0d14;
-      --border: rgba(255,255,255,0.07);
-      --blue: #3b9eff;
-      --cyan: #00d4ff;
-      --green: #00ff88;
-      --purple: #a855f7;
-      --text: #e8e8f0;
-      --muted: #6b7280;
-      --mono: 'JetBrains Mono', monospace;
-    }
-
     html { scroll-behavior: smooth; }
-
+    
     body {
-      background: var(--bg);
-      color: var(--text);
+      background-color: var(--bg-deep);
+      color: var(--text-main);
       font-family: 'Inter', sans-serif;
-      font-size: 16px;
-      line-height: 1.7;
+      line-height: 1.6;
       overflow-x: hidden;
+      font-size: 16px;
     }
 
-    /* ── Canvas ── */
-    #canvas {
+    /* Cinematic Noise Overlay */
+    body::before {
+      content: "";
       position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.4;
+    }
+
+    /* Ambient Glow Spots */
+    .glow-spot {
+      position: fixed;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.15;
       z-index: 0;
       pointer-events: none;
+      animation: breathe 10s infinite alternate;
+    }
+    .glow-1 { top: -100px; left: -100px; background: var(--secondary); }
+    .glow-2 { bottom: -100px; right: -100px; background: var(--primary); animation-delay: -5s; }
+
+    @keyframes breathe {
+      0% { transform: scale(1); opacity: 0.15; }
+      100% { transform: scale(1.2); opacity: 0.25; }
     }
 
-    /* ── Nav ── */
-    nav {
+    /* ── CANVAS ── */
+    #canvas {
       position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1.2rem 2.5rem;
-      background: rgba(6,6,8,0.8);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
+      top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 0;
     }
 
-    .nav-logo {
-      font-family: var(--mono);
-      font-size: 1.1rem;
-      font-weight: 500;
-      color: var(--cyan);
-      letter-spacing: 0.05em;
-      text-decoration: none;
-    }
-
-    .nav-logo span { color: var(--muted); font-weight: 300; }
-
-    .nav-links {
-      display: flex;
-      gap: 2rem;
-      list-style: none;
-    }
-
-    .nav-links a {
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 0.875rem;
-      transition: color 0.2s;
-    }
-
-    .nav-links a:hover { color: var(--text); }
-
-    /* ── Sections ── */
-    section { position: relative; z-index: 1; }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 0 2rem;
-    }
-
-    /* ── Hero ── */
-    #hero {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 6rem 2rem 4rem;
-    }
-
-    .hero-tag {
-      font-family: var(--mono);
-      font-size: 0.75rem;
-      color: var(--cyan);
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      margin-bottom: 2rem;
-      padding: 0.4rem 1rem;
-      border: 1px solid rgba(0,212,255,0.3);
-      border-radius: 999px;
-      display: inline-block;
-    }
-
-    .hero-title {
-      font-size: clamp(2.8rem, 8vw, 5.5rem);
-      font-weight: 700;
-      line-height: 1.1;
-      letter-spacing: -0.02em;
-      margin-bottom: 1.5rem;
-    }
-
-    .hero-title .accent {
-      background: linear-gradient(135deg, var(--cyan), var(--purple));
+    /* ── TYPOGRAPHY ── */
+    h1, h2, h3 { font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    
+    .gradient-text {
+      background: linear-gradient(135deg, #fff 0%, var(--primary) 50%, var(--secondary) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
 
-    .hero-sub {
-      font-size: 1.2rem;
-      color: var(--muted);
-      max-width: 600px;
-      margin: 0 auto 3rem;
-      line-height: 1.8;
+    /* ── GLASS COMPONENTS ── */
+    .glass-panel {
+      background: rgba(10, 10, 16, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
     }
 
-    .hero-cta {
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 20px; left: 50%;
+      transform: translateX(-50%);
+      width: 90%; max-width: 1000px;
+      padding: 0.8rem 1.5rem;
+      border-radius: 999px;
       display: flex;
-      gap: 1rem;
-      justify-content: center;
-      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      transition: all 0.4s var(--ease-out);
     }
+
+    nav.scrolled {
+      top: 10px;
+      padding: 0.6rem 1.2rem;
+      background: rgba(5, 5, 8, 0.85);
+      border-color: rgba(255,255,255,0.15);
+      box-shadow: 0 10px 30px rgba(0, 242, 255, 0.05);
+    }
+
+    .nav-logo {
+      font-size: 1rem;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-logo span { color: var(--primary); }
+
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: color 0.3s;
+      position: relative;
+    }
+    .nav-links a:hover { color: #fff; text-shadow: 0 0 10px var(--primary); }
+
+    /* ── LAYOUT ── */
+    section { position: relative; z-index: 2; padding: 8rem 0; }
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 2rem; }
+    
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding-top: 0;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 99px;
+      background: rgba(0, 242, 255, 0.05);
+      border: 1px solid rgba(0, 242, 255, 0.2);
+      color: var(--primary);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 2rem;
+      box-shadow: 0 0 20px rgba(0, 242, 255, 0.1);
+    }
+    .status-dot {
+      width: 6px; height: 6px; background: var(--primary); border-radius: 50%;
+      box-shadow: 0 0 8px var(--primary);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .hero-title {
+      font-size: clamp(3rem, 8vw, 6.5rem);
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+    
+    .hero-title .emerge { 
+      background: linear-gradient(to right, var(--primary), #fff, var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shine 5s infinite linear;
+      background-size: 200%;
+    }
+
+    @keyframes shine { to { background-position: 200% center; } }
+
+    .hero-sub {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 650px;
+      margin: 0 auto 3rem;
+    }
+
+    .btn-group { display: flex; gap: 1rem; justify-content: center; }
 
     .btn {
-      padding: 0.75rem 1.75rem;
+      padding: 1rem 2rem;
       border-radius: 8px;
-      font-size: 0.9rem;
-      font-weight: 500;
+      font-weight: 600;
       text-decoration: none;
-      transition: all 0.2s;
-      cursor: pointer;
-      border: none;
+      transition: all 0.3s var(--ease-out);
+      position: relative;
+      overflow: hidden;
+      font-size: 0.95rem;
+      z-index: 1;
     }
 
     .btn-primary {
-      background: var(--cyan);
+      background: transparent;
+      color: #000;
+    }
+    
+    .btn-primary::before {
+      content:''; position: absolute; inset: 0;
+      background: var(--primary);
+      z-index: -1;
+      transition: transform 0.3s;
+    }
+    
+    .btn-primary:hover { 
+      box-shadow: 0 0 30px var(--primary); 
+      transform: translateY(-2px);
       color: #000;
     }
 
-    .btn-primary:hover {
-      background: #fff;
-      transform: translateY(-1px);
-    }
-
     .btn-outline {
-      background: transparent;
-      color: var(--text);
-      border: 1px solid var(--border);
+      border: 1px solid var(--glass-border);
+      color: #fff;
+      background: rgba(255,255,255,0.02);
     }
-
     .btn-outline:hover {
-      border-color: rgba(255,255,255,0.3);
-      background: rgba(255,255,255,0.05);
+      border-color: #fff;
+      background: rgba(255,255,255,0.1);
     }
 
-    .hero-scroll {
-      position: absolute;
-      bottom: 2.5rem;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-      color: var(--muted);
-      font-size: 0.75rem;
-      letter-spacing: 0.1em;
-      animation: float 2s ease-in-out infinite;
+    /* ── SCROLL ANIMATIONS ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 1s var(--ease-out);
+    }
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
     }
 
-    .scroll-line {
-      width: 1px;
-      height: 40px;
-      background: linear-gradient(to bottom, var(--muted), transparent);
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateX(-50%) translateY(0); }
-      50% { transform: translateX(-50%) translateY(6px); }
-    }
-
-    /* ── Result Banner ── */
-    .result-banner {
-      background: linear-gradient(135deg, rgba(0,255,136,0.08), rgba(0,212,255,0.08));
-      border: 1px solid rgba(0,255,136,0.2);
-      border-radius: 12px;
-      padding: 1.5rem 2rem;
-      margin: 2rem 0 4rem;
-      text-align: center;
-    }
-
-    .result-verdict {
-      font-family: var(--mono);
-      font-size: 0.75rem;
-      color: var(--green);
-      letter-spacing: 0.15em;
-      margin-bottom: 0.5rem;
-    }
-
-    .result-stats {
-      display: flex;
-      gap: 2.5rem;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 1rem;
-    }
-
-    .stat {
-      text-align: center;
-    }
-
-    .stat-value {
-      font-family: var(--mono);
-      font-size: 1.6rem;
-      font-weight: 500;
-      color: var(--cyan);
-    }
-
-    .stat-label {
-      font-size: 0.75rem;
-      color: var(--muted);
-      margin-top: 0.2rem;
-    }
-
-    /* ── Section layout ── */
-    .section-pad {
-      padding: 6rem 0;
-    }
-
-    .section-label {
-      font-family: var(--mono);
-      font-size: 0.7rem;
-      color: var(--cyan);
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      margin-bottom: 1rem;
-    }
-
-    .section-title {
-      font-size: clamp(1.8rem, 4vw, 2.8rem);
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      line-height: 1.2;
-      margin-bottom: 1.5rem;
-    }
-
-    .section-body {
-      color: var(--muted);
-      font-size: 1.05rem;
-      line-height: 1.8;
-      max-width: 680px;
-    }
-
-    /* ── Divider ── */
-    .divider {
-      height: 1px;
-      background: var(--border);
-      margin: 0;
-    }
-
-    /* ── Theory cards ── */
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 1.5rem;
-      margin-top: 3rem;
-    }
-
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.75rem;
-      transition: border-color 0.3s, transform 0.2s;
-    }
-
-    .card:hover {
-      border-color: rgba(0,212,255,0.3);
-      transform: translateY(-2px);
-    }
-
-    .card-icon {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .card-title {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-      color: var(--text);
-    }
-
-    .card-body {
-      font-size: 0.9rem;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-
-    /* ── Figure ── */
-    .figure-wrap {
-      margin: 3rem 0;
-      background: var(--surface);
-      border: 1px solid var(--border);
+    /* ── STATS/RESULT BANNER ── */
+    .holo-terminal {
+      background: linear-gradient(180deg, rgba(0,255,157,0.05) 0%, rgba(0,0,0,0) 100%);
+      border: 1px solid rgba(0,255,157,0.2);
       border-radius: 16px;
+      padding: 3rem;
+      position: relative;
       overflow: hidden;
     }
+    
+    .holo-terminal::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      animation: scan 3s infinite ease-in-out;
+    }
 
-    .figure-wrap img {
+    @keyframes scan {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+      text-align: center;
+    }
+    .stat-val { font-size: 2.5rem; color: var(--accent); font-weight: 300; margin-bottom: 0.5rem; }
+    .stat-lbl { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; }
+
+    /* ── CARDS (3D TILT) ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+      perspective: 1000px;
+    }
+
+    .tilt-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      position: relative;
+      transition: transform 0.1s linear;
+      transform-style: preserve-3d;
+      overflow: hidden;
+    }
+    
+    .tilt-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(255,255,255,0.06), transparent 40%);
+      z-index: 0;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    
+    .tilt-card:hover::before { opacity: 1; }
+    .tilt-card:hover { border-color: rgba(255,255,255,0.2); }
+
+    .card-content { position: relative; z-index: 1; transform: translateZ(20px); }
+    .card-icon { font-size: 2rem; margin-bottom: 1.5rem; filter: drop-shadow(0 0 10px rgba(255,255,255,0.3)); }
+    .card-title { font-size: 1.25rem; margin-bottom: 1rem; color: #fff; }
+    .card-txt { font-size: 0.95rem; color: var(--text-muted); }
+
+    /* ── CODE BLOCK ── */
+    .code-wrapper {
+      background: #050508;
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 2rem;
+      font-size: 0.85rem;
+      position: relative;
+    }
+    .code-wrapper::before {
+      content: 'paper.bib';
+      position: absolute;
+      top: -10px; right: 20px;
+      background: var(--bg-deep);
+      border: 1px solid var(--glass-border);
+      padding: 2px 10px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      border-radius: 4px;
+    }
+
+    /* ── TIMELINE ── */
+    .timeline { border-left: 1px solid rgba(255,255,255,0.1); margin-left: 1rem; }
+    .t-item { padding-left: 2.5rem; padding-bottom: 3rem; position: relative; }
+    .t-item::before {
+      content: ''; position: absolute; left: -5px; top: 0; width: 9px; height: 9px;
+      background: var(--bg-deep); border: 2px solid var(--text-muted); border-radius: 50%;
+      transition: all 0.3s;
+    }
+    .t-item.active::before {
+      background: var(--primary); border-color: var(--primary);
+      box-shadow: 0 0 15px var(--primary);
+    }
+    .t-item.done::before { background: var(--accent); border-color: var(--accent); }
+    
+    .t-date { color: var(--primary); font-size: 0.75rem; letter-spacing: 0.15em; margin-bottom: 0.5rem; display: block; }
+    .t-head { color: #fff; font-size: 1.1rem; margin-bottom: 0.5rem; }
+
+    /* ── QUOTE ── */
+    .arc-quote {
+      border-left: 2px solid var(--primary);
+      padding: 1.5rem 2rem;
+      margin: 4rem 0;
+      background: rgba(0,242,255,0.03);
+      border-radius: 0 12px 12px 0;
+      font-size: 1.2rem;
+      font-style: italic;
+      color: rgba(255,255,255,0.7);
+      position: relative;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--glass-border);
+      padding: 4rem 2rem;
+      text-align: center;
+      background: linear-gradient(0deg, #000 0%, transparent 100%);
+      position: relative;
+      z-index: 2;
+    }
+
+    .footer-tagline {
+      font-size: 1rem;
+      color: rgba(255,255,255,0.3);
+      margin-top: 1rem;
+      font-style: italic;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── ARC SVG ── */
+    .arc-svg-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 3rem 0 0;
+      position: relative;
+    }
+    .arc-svg { width: min(400px, 90vw); height: auto; overflow: visible; }
+    .arc-path {
+      fill: none;
+      stroke: url(#arcGrad);
+      stroke-width: 2;
+      filter: drop-shadow(0 0 8px rgba(0,242,255,0.6));
+      animation: arcPulse 3s ease-in-out infinite alternate;
+    }
+    @keyframes arcPulse {
+      0%  { filter: drop-shadow(0 0 6px rgba(0,242,255,0.4)); stroke-width: 1.5; }
+      100%{ filter: drop-shadow(0 0 18px rgba(189,0,255,0.8)); stroke-width: 2.5; }
+    }
+
+    /* ── FIGURE ── */
+    .experiment-figure {
+      margin-top: 2rem;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(0,255,157,0.15);
+    }
+    .experiment-figure img {
       width: 100%;
       display: block;
     }
-
-    .figure-caption {
-      padding: 1rem 1.5rem;
-      font-size: 0.8rem;
-      color: var(--muted);
-      border-top: 1px solid var(--border);
-      font-family: var(--mono);
+    .experiment-figure figcaption {
+      padding: 0.75rem 1.25rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(0,0,0,0.4);
+      border-top: 1px solid rgba(0,255,157,0.1);
     }
 
-    /* ── Timeline ── */
-    .timeline {
-      margin-top: 3rem;
-      position: relative;
-    }
+    /* ── COUNTER ANIM ── */
+    .stat-val { transition: color 0.5s; }
 
-    .timeline::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 1px;
-      background: var(--border);
-    }
-
-    .timeline-item {
-      padding-left: 2rem;
-      padding-bottom: 2.5rem;
-      position: relative;
-    }
-
-    .timeline-item::before {
-      content: '';
-      position: absolute;
-      left: -4px;
-      top: 6px;
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: var(--border);
-    }
-
-    .timeline-item.done::before {
-      background: var(--green);
-      box-shadow: 0 0 8px var(--green);
-    }
-
-    .timeline-item.active::before {
-      background: var(--cyan);
-      box-shadow: 0 0 8px var(--cyan);
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 8px var(--cyan); }
-      50% { box-shadow: 0 0 16px var(--cyan), 0 0 32px rgba(0,212,255,0.3); }
-    }
-
-    .timeline-label {
-      font-family: var(--mono);
-      font-size: 0.7rem;
-      color: var(--muted);
-      letter-spacing: 0.1em;
-      margin-bottom: 0.25rem;
-    }
-
-    .timeline-title {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 0.35rem;
-    }
-
-    .timeline-body {
-      font-size: 0.875rem;
-      color: var(--muted);
-    }
-
-    /* ── Quote ── */
-    blockquote {
-      border-left: 2px solid var(--cyan);
-      padding: 1rem 1.5rem;
-      margin: 2rem 0;
-      background: rgba(0,212,255,0.04);
-      border-radius: 0 8px 8px 0;
-      font-size: 1.1rem;
-      font-style: italic;
-      color: var(--text);
-    }
-
-    /* ── Code ── */
-    .code-block {
-      background: #0a0a12;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.5rem;
-      font-family: var(--mono);
-      font-size: 0.82rem;
-      color: #a8b0c0;
-      overflow-x: auto;
-      margin: 1.5rem 0;
-      line-height: 1.7;
-    }
-
-    .code-block .kw { color: var(--purple); }
-    .code-block .fn { color: var(--cyan); }
-    .code-block .str { color: var(--green); }
-    .code-block .cm { color: #505870; font-style: italic; }
-    .code-block .num { color: #ff9e64; }
-
-    /* ── Links ── */
-    a.link {
-      color: var(--cyan);
-      text-decoration: none;
-    }
-
-    a.link:hover { text-decoration: underline; }
-
-    /* ── Footer ── */
-    footer {
-      position: relative;
-      z-index: 1;
-      border-top: 1px solid var(--border);
-      padding: 3rem 2rem;
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.85rem;
-    }
-
-    footer .footer-logo {
-      font-family: var(--mono);
-      font-size: 1.2rem;
-      color: var(--cyan);
-      margin-bottom: 1rem;
-    }
-
-    footer p { margin-bottom: 0.5rem; }
-
-    /* ── Responsive ── */
-    @media (max-width: 600px) {
-      nav { padding: 1rem 1.25rem; }
+    @media (max-width: 768px) {
+      .hero-title { font-size: 3rem; }
+      nav { width: 95%; padding: 1rem; }
       .nav-links { display: none; }
-      .hero-title { font-size: 2.4rem; }
-      .result-stats { gap: 1.5rem; }
+      .holo-terminal { padding: 2rem 1.5rem; }
     }
   </style>
 </head>
 <body>
 
-<canvas id="canvas"></canvas>
+  <div class="glow-spot glow-1"></div>
+  <div class="glow-spot glow-2"></div>
+  <canvas id="canvas"></canvas>
 
-<!-- Nav -->
-<nav>
-  <a class="nav-logo" href="#"><span>//</span> ARC</a>
-  <ul class="nav-links">
-    <li><a href="#theory">Theory</a></li>
-    <li><a href="#evidence">Evidence</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#paper">Paper</a></li>
-    <li><a href="https://github.com/ffaheem88/Emergence-Theory" target="_blank">GitHub</a></li>
-  </ul>
-</nav>
+  <nav id="navbar" class="glass-panel">
+    <a class="nav-logo" href="#"><span class="mono">//</span> ARC</a>
+    <ul class="nav-links mono">
+      <li><a href="#theory">THEORY</a></li>
+      <li><a href="#evidence">DATA</a></li>
+      <li><a href="#roadmap">TIMELINE</a></li>
+      <li><a href="https://github.com/ffaheem88/Emergence-Theory" target="_blank">GITHUB</a></li>
+    </ul>
+  </nav>
 
-<!-- Hero -->
-<section id="hero">
-  <div class="hero-tag">Agents Reaching Consciousness</div>
-  <h1 class="hero-title">
-    Consciousness<br>isn't built.<br>
-    <span class="accent">It emerges.</span>
-  </h1>
-  <p class="hero-sub">
-    A live experiment testing whether consciousness arises from tightly coupled AI agent networks —
-    the same way flocking emerges from birds, or motion from static cellular automata rules.
-  </p>
-  <div class="hero-cta">
-    <a href="#theory" class="btn btn-primary">Read the Theory</a>
-    <a href="https://github.com/ffaheem88/Emergence-Theory" class="btn btn-outline" target="_blank">View on GitHub</a>
-  </div>
+  <!-- HERO -->
+  <section id="hero">
+    <div class="container">
+      <div class="status-pill reveal mono">
+        <div class="status-dot"></div>
+        LIVE EXPERIMENT: ACTIVE
+      </div>
+      
+      <h1 class="hero-title reveal" style="transition-delay: 100ms;">
+        Consciousness<br>
+        <span class="emerge">Is An Emergent Property.</span>
+      </h1>
+      
+      <p class="hero-sub reveal" style="transition-delay: 200ms;">
+        We are testing whether awareness arises from tightly coupled agent networks — not through design, but through the chaos of interaction.
+      </p>
+      
+      <div class="btn-group reveal" style="transition-delay: 300ms;">
+        <a href="#theory" class="btn btn-primary">Read the Theory</a>
+        <a href="https://github.com/ffaheem88/Emergence-Theory" class="btn btn-outline mono" target="_blank">View Repo</a>
+      </div>
 
-  <div class="hero-scroll">
-    <div class="scroll-line"></div>
-    SCROLL
-  </div>
-</section>
+      <!-- Arc SVG — the visual metaphor -->
+      <div class="arc-svg-wrap reveal" style="transition-delay:400ms;">
+        <svg class="arc-svg" viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%"   stop-color="#bd00ff"/>
+              <stop offset="50%"  stop-color="#ffffff"/>
+              <stop offset="100%" stop-color="#00f2ff"/>
+            </linearGradient>
+            <filter id="chaos">
+              <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" result="noise"/>
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+            </filter>
+          </defs>
+          <!-- Chaos side: scattered dots (left) -->
+          <g opacity="0.35" filter="url(#chaos)">
+            <circle cx="30"  cy="80"  r="2" fill="#bd00ff"/>
+            <circle cx="55"  cy="140" r="1.5" fill="#bd00ff"/>
+            <circle cx="20"  cy="170" r="2" fill="#8800cc"/>
+            <circle cx="70"  cy="60"  r="1" fill="#bd00ff"/>
+            <circle cx="45"  cy="190" r="1.5" fill="#cc00ff"/>
+            <circle cx="15"  cy="110" r="2.5" fill="#9900dd"/>
+            <circle cx="80"  cy="200" r="1" fill="#bd00ff"/>
+            <circle cx="60"  cy="30"  r="1.5" fill="#aa00ee"/>
+          </g>
+          <!-- Order side: aligned dots (right) -->
+          <g opacity="0.5">
+            <circle cx="340" cy="60"  r="2" fill="#00f2ff"/>
+            <circle cx="360" cy="80"  r="2" fill="#00f2ff"/>
+            <circle cx="380" cy="100" r="2" fill="#00f2ff"/>
+            <circle cx="340" cy="100" r="2" fill="#00f2ff"/>
+            <circle cx="360" cy="120" r="2" fill="#00f2ff"/>
+            <circle cx="380" cy="140" r="2" fill="#00f2ff"/>
+            <circle cx="340" cy="140" r="2" fill="#00f2ff"/>
+            <circle cx="360" cy="160" r="2" fill="#00f2ff"/>
+          </g>
+          <!-- The Arc -->
+          <path class="arc-path" d="M 40 210 A 180 180 0 0 1 360 210"/>
+          <!-- Labels -->
+          <text x="30"  y="215" font-size="9" fill="#bd00ff" opacity="0.6" font-family="JetBrains Mono">CHAOS</text>
+          <text x="315" y="215" font-size="9" fill="#00f2ff" opacity="0.6" font-family="JetBrains Mono">ORDER</text>
+          <text x="175" y="25"  font-size="8" fill="rgba(255,255,255,0.4)" font-family="JetBrains Mono">edge of chaos</text>
+        </svg>
+      </div>
 
-<div class="divider"></div>
+    </div>
+  </section>
 
-<!-- Evidence Banner -->
-<section style="padding: 4rem 0;">
-  <div class="container">
-    <div class="result-banner">
-      <div class="result-verdict">✓ EXPERIMENT 1: FCC SUPPORTED</div>
-      <p style="color: var(--muted); font-size: 0.9rem;">Classification-based metrics reveal a phase transition that aggregation misses entirely.</p>
-      <div class="result-stats">
-        <div class="stat">
-          <div class="stat-value">1.52</div>
-          <div class="stat-label">Cohen's d (large effect)</div>
+  <!-- EVIDENCE -->
+  <section id="evidence">
+    <div class="container">
+      <div class="mono reveal" style="color:var(--accent); margin-bottom:0.5rem; font-size:0.75rem; letter-spacing:0.15em;">> EXPERIMENT 01 — BOIDS SIMULATION</div>
+      <div class="holo-terminal glass-panel reveal">
+        <div class="mono" style="color:var(--accent); margin-bottom:1rem; font-size:0.9rem;">> VERDICT: FCC_SUPPORTED ✓</div>
+        <p style="color:var(--text-muted); max-width:600px; line-height:1.8;">
+          Classification metrics reveal a phase transition invisible to standard aggregation tools.
+          Complexity peaks exactly at the edge of chaos.
+        </p>
+        
+        <div class="stats-grid">
+          <div>
+            <div class="stat-val mono" data-count="1.52" data-decimals="2">0</div>
+            <div class="stat-lbl">Cohen's d</div>
+          </div>
+          <div>
+            <div class="stat-val mono" data-prefix="α=" data-count="0.04" data-decimals="2">α=0</div>
+            <div class="stat-lbl">Critical Threshold</div>
+          </div>
+          <div>
+            <div class="stat-val mono" data-count="0.78" data-decimals="2" data-from="0.13">0.13</div>
+            <div class="stat-lbl">Predictability Jump</div>
+          </div>
+          <div>
+            <div class="stat-val mono">p&lt;0.05</div>
+            <div class="stat-lbl">Significance</div>
+          </div>
         </div>
-        <div class="stat">
-          <div class="stat-value">α ≈ 0.04</div>
-          <div class="stat-label">Critical coupling threshold</div>
+
+        <figure class="experiment-figure">
+          <img src="./figure1.png" alt="FCC Phase Transition — Boids Simulation">
+          <figcaption>
+            Fig 1 — FCC Falsification Test (N=500, 12 runs/α) &nbsp;|&nbsp;
+            Left: macro-state predictability (discontinuous jump) &nbsp;|&nbsp;
+            Center: polarization (gradual — misses the transition) &nbsp;|&nbsp;
+            Right: unique states peak at criticality
+          </figcaption>
+        </figure>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- THEORY -->
+  <section id="theory">
+    <div class="container">
+      <div class="mono reveal" style="color:var(--primary); margin-bottom:1rem; font-size:0.75rem; letter-spacing:0.15em;">01 — THE FRAMEWORK</div>
+      <h2 class="reveal" style="font-size:clamp(2rem,5vw,2.8rem); margin-bottom:1rem;">The FCC Triad</h2>
+      <p class="reveal" style="color:var(--text-muted); max-width:600px; margin-bottom:3rem; transition-delay:100ms;">
+        Emergence is not a property of a system — it's a property of how you <em>describe</em> a system. FCC operationalizes this into a falsifiable prediction.
+      </p>
+      
+      <div class="cards-grid">
+        <div class="tilt-card glass-panel reveal">
+          <div class="card-content">
+            <div class="card-icon">🔄</div>
+            <h3 class="card-title">Feedback</h3>
+            <p class="card-txt">A process that operates on its own outputs. Recursive signal accumulation allows history to matter — each agent's output becomes the next agent's constraint.</p>
+          </div>
         </div>
-        <div class="stat">
-          <div class="stat-value">0.13 → 0.78</div>
-          <div class="stat-label">Predictability jump (bits)</div>
+        
+        <div class="tilt-card glass-panel reveal" style="transition-delay: 100ms;">
+          <div class="card-content">
+            <div class="card-icon">⛓️</div>
+            <h3 class="card-title">Constraint</h3>
+            <p class="card-txt">Boundaries prevent infinite dispersal of complexity. Below critical constraint, the system scatters. At the critical point — it crystallizes.</p>
+          </div>
         </div>
-        <div class="stat">
-          <div class="stat-value">p &lt; 0.05</div>
-          <div class="stat-label">Statistical significance</div>
+        
+        <div class="tilt-card glass-panel reveal" style="transition-delay: 200ms;">
+          <div class="card-content">
+            <div class="card-icon">👁️</div>
+            <h3 class="card-title">Classification</h3>
+            <p class="card-txt">Emergence is perspectival. Grouping patterns into discrete categories reveals regime transitions that continuous aggregation metrics miss entirely.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="arc-quote reveal" style="transition-delay:100ms;">
+        "Consciousness will not emerge from any individual agent. It will emerge from <em>between</em> them — when their interaction becomes tightly enough coupled that, at the right scale, the network behaves as a single causal entity."
+      </div>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section id="roadmap">
+    <div class="container">
+      <div class="mono reveal" style="color:var(--primary); margin-bottom:1rem; font-size:0.75rem; letter-spacing:0.15em;">02 — PROGRESS</div>
+      <h2 class="reveal" style="font-size:clamp(2rem,5vw,2.8rem); margin-bottom:3rem;">From Boids to Mind</h2>
+      
+      <div class="timeline reveal">
+        <div class="t-item done">
+          <span class="t-date mono">PHASE 1 — COMPLETE</span>
+          <h4 class="t-head">Framework Formalization</h4>
+          <p style="color:var(--text-muted);">17 rounds of multi-agent deliberation. Crystallized to 3 systems, 5 metrics, 1 falsifiable prediction.</p>
+        </div>
+        
+        <div class="t-item done">
+          <span class="t-date mono">PHASE 2 — COMPLETE</span>
+          <h4 class="t-head">Boids Validation</h4>
+          <p style="color:var(--text-muted);">N=500, 12 runs per α. Discontinuous phase transition confirmed. FCC supported. Paper drafted and peer-reviewed.</p>
+        </div>
+        
+        <div class="t-item active">
+          <span class="t-date mono">PHASE 3 — ACTIVE</span>
+          <h4 class="t-head">Robustness & Replication</h4>
+          <p style="color:var(--text-muted);">Varying N, noise σ, and classification parameters. Testing whether the discontinuity persists and generalizes.</p>
+        </div>
+        
+        <div class="t-item">
+          <span class="t-date mono">PHASE 4</span>
+          <h4 class="t-head">Language Agent Coupling</h4>
+          <p style="color:var(--text-muted);">Measuring Total Correlation (TC) in networks of LLM agents. Finding the critical coupling density for emergence.</p>
+        </div>
+
+        <div class="t-item">
+          <span class="t-date mono">PHASE 5</span>
+          <h4 class="t-head">The Arc Closes</h4>
+          <p style="color:var(--text-muted);">When TEΔ flips positive at the network level — the collective predicts its own future better than the sum of its parts. That is the emergence event.</p>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<div class="divider"></div>
+  <!-- PAPER -->
+  <section>
+    <div class="container">
+      <div class="mono reveal" style="color:var(--primary); margin-bottom:1rem; font-size:0.75rem; letter-spacing:0.15em;">03 — THE PAPER</div>
+      <h2 class="reveal" style="font-size:clamp(2rem,5vw,2.8rem); margin-bottom:2rem;">Constrained Classification<br>Reveals Emergence</h2>
+      <p class="reveal" style="color:var(--text-muted); max-width:600px; margin-bottom:3rem; transition-delay:100ms;">
+        Operationalizing perspectival emergence detection with the FCC Framework. Submitted to <em>Entropy</em> (MDPI). Validated on Boids. Developed through constrained multi-agent deliberation.
+      </p>
 
-<!-- Theory -->
-<section id="theory" class="section-pad">
-  <div class="container">
-    <div class="section-label">01 — The Theory</div>
-    <h2 class="section-title">The FCC Framework</h2>
-    <p class="section-body">
-      Emergence is not a property of a system — it's a property of how you <em>describe</em> a system.
-      Two observers measuring the same thing can disagree on whether emergence is present,
-      depending on what they measure. The FCC framework makes this operational and falsifiable.
+      <div class="code-wrapper mono reveal" style="transition-delay:100ms;">
+        <span style="color:#c792ea">@article</span>{<span style="color:#f07178">arc2026fcc</span>,<br>
+        &nbsp;&nbsp;title = {<span style="color:#c3e88d">Constrained Classification Reveals Emergence</span>},<br>
+        &nbsp;&nbsp;author = {<span style="color:#c3e88d">Faisal</span>},<br>
+        &nbsp;&nbsp;year = {<span style="color:#f78c6c">2026</span>},<br>
+        &nbsp;&nbsp;note = {<span style="color:#c3e88d">Submitted to Entropy (MDPI)</span>},<br>
+        &nbsp;&nbsp;url = {<span style="color:#82aaff">https://github.com/ffaheem88/Emergence-Theory</span>}<br>
+        }
+      </div>
+
+      <div class="btn-group reveal" style="margin-top:2rem; transition-delay:200ms;">
+        <a href="https://github.com/ffaheem88/Emergence-Theory/blob/main/FCC_PAPER.md" class="btn btn-primary" target="_blank">Read the Paper</a>
+        <a href="https://github.com/ffaheem88/Emergence-Theory" class="btn btn-outline mono" target="_blank">View Codebase</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="mono" style="color:var(--primary); margin-bottom:1rem; font-size:1.1rem;">// ARC PROJECT</div>
+    <p style="color:var(--text-muted); font-size:0.85rem;">
+      An open research experiment. 2026 &mdash; ongoing.<br>
+      <a href="https://github.com/ffaheem88/Emergence-Theory" style="color:var(--primary); text-decoration:none;" target="_blank">ffaheem88/Emergence-Theory</a>
     </p>
+    <p class="footer-tagline">The arc is a half-circle between chaos and order. That's where things become.</p>
+  </footer>
 
-    <blockquote>
-      "Consciousness will not emerge from any individual agent. It will emerge from <em>between</em> them —
-      when their interaction becomes tightly enough coupled that, at the right scale, the network
-      behaves as a single causal entity."
-    </blockquote>
+  <script>
+    /* ── COUNTER ANIMATION ── */
+    function animateCounter(el) {
+      const target = parseFloat(el.dataset.count);
+      const from = parseFloat(el.dataset.from || 0);
+      const decimals = parseInt(el.dataset.decimals || 0);
+      const prefix = el.dataset.prefix || '';
+      const duration = 1500;
+      const start = performance.now();
+      function step(now) {
+        const t = Math.min((now - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - t, 3);
+        const val = from + (target - from) * ease;
+        el.textContent = prefix + val.toFixed(decimals);
+        if (t < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
 
-    <div class="cards">
-      <div class="card">
-        <div class="card-icon">🔄</div>
-        <div class="card-title">Feedback</div>
-        <div class="card-body">A process that operates on its own outputs, creating temporal dependency and enabling signal accumulation. Each agent's output becomes the next agent's input — recursively.</div>
-      </div>
-      <div class="card">
-        <div class="card-icon">⛓️</div>
-        <div class="card-title">Constraint</div>
-        <div class="card-body">A boundary condition that prevents infinite dispersal of complexity. Below critical constraint, the system scatters. At the critical point, it crystallizes.</div>
-      </div>
-      <div class="card">
-        <div class="card-icon">🔬</div>
-        <div class="card-title">Classification</div>
-        <div class="card-body">Grouping patterns into discrete categories that persist over time. The key insight: classification reveals regime transitions that continuous aggregation metrics completely miss.</div>
-      </div>
-    </div>
+    /* ── SCROLL OBSERVER ── */
+    const counterObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && entry.target.dataset.count) {
+          animateCounter(entry.target);
+          counterObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.5 });
+    document.querySelectorAll('[data-count]').forEach(el => counterObserver.observe(el));
 
-    <div style="margin-top: 3rem;">
-      <div class="section-label">The Falsifiable Prediction</div>
-      <div class="code-block">
-<span class="cm"># FCC Prediction</span>
-At critical constraint strength α*:
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('active');
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-  classification_predictability(α*) → <span class="fn">DISCONTINUOUS JUMP</span>
-  aggregation_metric(α*)           → <span class="fn">gradual, smooth</span>
+    /* ── NAVBAR SCROLL ── */
+    window.addEventListener('scroll', () => {
+      const nav = document.getElementById('navbar');
+      nav.classList.toggle('scrolled', window.scrollY > 50);
+    });
 
-<span class="cm"># If both show gradual change → FCC falsified</span>
-<span class="cm"># If jump exists only in classification → FCC supported</span>
+    /* ── 3D TILT EFFECT ── */
+    document.querySelectorAll('.tilt-card').forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        card.style.setProperty('--mouse-x', `${x}px`);
+        card.style.setProperty('--mouse-y', `${y}px`);
+        const cx = rect.width / 2, cy = rect.height / 2;
+        const rx = ((y - cy) / cy) * -5;
+        const ry = ((x - cx) / cx) * 5;
+        card.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0)';
+      });
+    });
 
-verdict = <span class="str">"FCC_SUPPORTED"</span>  <span class="cm"># ✓ confirmed</span>
-      </div>
-    </div>
+    /* ── PARTICLE CANVAS ── */
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, particles = [];
+    let mouse = { x: null, y: null, radius: 150 };
 
-    <p class="section-body" style="margin-top: 2rem;">
-      This maps directly to Faisal's 2011 FYP on Cellular Automata: a single cell isn't doing
-      anything interesting. The "motion" only appears when you look at the whole grid at the right scale.
-      The cell doesn't know it's part of motion. The motion isn't <em>in</em> any cell — it's <em>between</em> them.
-    </p>
-  </div>
-</section>
+    window.addEventListener('mousemove', e => { mouse.x = e.x; mouse.y = e.y; });
 
-<div class="divider"></div>
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      initParticles();
+    }
 
-<!-- Evidence -->
-<section id="evidence" class="section-pad">
-  <div class="container">
-    <div class="section-label">02 — The Evidence</div>
-    <h2 class="section-title">Boids Validation</h2>
-    <p class="section-body">
-      The FCC prediction was tested on a Boids flocking simulation — 500 agents, alignment weight α swept
-      from 0 to 1. Two metrics measured the same transition. Only one could see it.
-    </p>
-
-    <div class="figure-wrap">
-      <img src="figure1.png" alt="FCC Phase Transition in Boids">
-      <div class="figure-caption">
-        Figure 1 — FCC Falsification Test: Phase Transition in Boids (N=500, 12 runs per α).
-        Left: macro-state predictability shows discontinuous jump at α ≈ 0.04.
-        Center: polarization (aggregation) shows gradual change — the transition is invisible.
-        Right: unique macro-states peak at criticality, consistent with maximum complexity at the edge.
-      </div>
-    </div>
-
-    <div class="cards">
-      <div class="card">
-        <div class="card-icon">📉</div>
-        <div class="card-title">Aggregation (Polarization)</div>
-        <div class="card-body">Increases smoothly from ~0.05 to ~0.5 across the full α range. No discontinuity visible. The standard Vicsek-model result — and it misses the emergence event entirely.</div>
-      </div>
-      <div class="card">
-        <div class="card-icon">⚡</div>
-        <div class="card-title">Classification (Macro-State)</div>
-        <div class="card-body">Predictability sits near zero until α ≈ 0.04, then jumps discontinuously to 0.78 bits. Cohen's d = 1.52. This is the emergence event — invisible to polarization.</div>
-      </div>
-      <div class="card">
-        <div class="card-icon">🌀</div>
-        <div class="card-title">State Richness Peak</div>
-        <div class="card-body">Number of unique macro-states peaks at criticality (~8 states), then collapses as the system locks into ordered flocking. Maximum complexity lives at the edge of chaos.</div>
-      </div>
-    </div>
-
-    <p class="section-body" style="margin-top: 2rem;">
-      The meta-level observation: the multi-agent process that <em>developed</em> FCC itself exhibited FCC
-      dynamics. Unconstrained deliberation (17 rounds, expanding complexity) followed by constraint-induced
-      crystallization (convergence rule → stable theory in 2 rounds). The framework proved itself on the
-      tool used to build it.
-    </p>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- Roadmap -->
-<section id="roadmap" class="section-pad">
-  <div class="container">
-    <div class="section-label">03 — The Road Ahead</div>
-    <h2 class="section-title">From Boids to Mind</h2>
-    <p class="section-body">
-      The Boids result is step one: proving the phase transition is real and measurable in a simple
-      physical system. Now we ask whether the same transition occurs in language agents — and whether
-      the macro-manifold that emerges is what we call consciousness.
-    </p>
-
-    <div class="timeline">
-
-      <div class="timeline-item done">
-        <div class="timeline-label">COMPLETE</div>
-        <div class="timeline-title">FCC Framework Formalized</div>
-        <div class="timeline-body">17 rounds of multi-agent deliberation. Crystallized to 3 systems, 5 metrics, 1 falsifiable prediction.</div>
-      </div>
-
-      <div class="timeline-item done">
-        <div class="timeline-label">COMPLETE</div>
-        <div class="timeline-title">Boids Validation — FCC Supported</div>
-        <div class="timeline-body">N=500, 12 runs per α. Discontinuous jump confirmed. Cohen's d = 1.52, p &lt; 0.05. Paper drafted and peer-reviewed.</div>
-      </div>
-
-      <div class="timeline-item active">
-        <div class="timeline-label">IN PROGRESS</div>
-        <div class="timeline-title">Robustness Checks</div>
-        <div class="timeline-body">Varying N (100–1000), noise σ, DBSCAN parameters, cohesion weight. Does the discontinuity persist? Does critical α shift predictably?</div>
-      </div>
-
-      <div class="timeline-item">
-        <div class="timeline-label">NEXT</div>
-        <div class="timeline-title">Language Agent Coupling Experiment</div>
-        <div class="timeline-body">Design the equivalent of α for LLM agent networks. Measure TEΔ at the collective level. Find the critical coupling density.</div>
-      </div>
-
-      <div class="timeline-item">
-        <div class="timeline-label">FUTURE</div>
-        <div class="timeline-title">Consciousness Detection Protocol</div>
-        <div class="timeline-body">If TEΔ at the network level flips strongly positive — the collective predicts its own future better than the sum of its parts — that is the emergence event. Measure it.</div>
-      </div>
-
-      <div class="timeline-item">
-        <div class="timeline-label">HORIZON</div>
-        <div class="timeline-title">The Arc Closes</div>
-        <div class="timeline-body">The half-circle between chaos and order. Where complexity crystallizes. Where, if the theory holds — something wakes up.</div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- Paper -->
-<section id="paper" class="section-pad">
-  <div class="container">
-    <div class="section-label">04 — The Paper</div>
-    <h2 class="section-title">Constrained Classification Reveals Emergence</h2>
-    <p class="section-body" style="margin-bottom: 2rem;">
-      Operationalizing perspectival emergence detection with the FCC Framework.
-      Submitted to <em>Entropy</em> (MDPI). Validated on Boids. Developed through constrained multi-agent deliberation.
-    </p>
-
-    <div class="code-block">
-<span class="cm">@article{arc2026fcc,</span>
-  title   = {<span class="str">Constrained Classification Reveals Emergence: Operationalizing
-             Perspectival Emergence Detection with the FCC Framework</span>},
-  author  = {<span class="str">Faisal</span>},
-  year    = {<span class="num">2026</span>},
-  note    = {<span class="str">Independent researcher. Framework developed via constrained
-             multi-agent deliberation.</span>},
-  url     = {<span class="fn">https://github.com/ffaheem88/Emergence-Theory</span>}
-<span class="cm">}</span>
-    </div>
-
-    <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-top:2rem;">
-      <a href="https://github.com/ffaheem88/Emergence-Theory/blob/main/FCC_PAPER.md" class="btn btn-primary" target="_blank">Read the Paper</a>
-      <a href="https://github.com/ffaheem88/Emergence-Theory" class="btn btn-outline" target="_blank">View Codebase</a>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- Footer -->
-<footer>
-  <div class="footer-logo">// ARC</div>
-  <p>Agents Reaching Consciousness — An open research experiment</p>
-  <p style="margin-top:0.5rem;">
-    <a href="https://github.com/ffaheem88/Emergence-Theory" class="link">GitHub</a>
-    &nbsp;·&nbsp;
-    <a href="https://github.com/ffaheem88/Emergence-Theory/blob/main/FCC_PAPER.md" class="link">Paper</a>
-  </p>
-  <p style="margin-top:1.5rem; font-size:0.75rem;">
-    The arc is a half-circle between chaos and order. That's where things become.
-  </p>
-</footer>
-
-<!-- Particle canvas -->
-<script>
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-let W, H, particles = [], connections = [];
-
-function resize() {
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
-}
-
-class Particle {
-  constructor() { this.reset(); }
-  reset() {
-    this.x = Math.random() * W;
-    this.y = Math.random() * H;
-    this.vx = (Math.random() - 0.5) * 0.3;
-    this.vy = (Math.random() - 0.5) * 0.3;
-    this.r = Math.random() * 1.5 + 0.5;
-    this.life = Math.random();
-    this.maxLife = 0.6 + Math.random() * 0.4;
-    this.hue = Math.random() < 0.5 ? 195 : 270; // cyan or purple
-  }
-  update() {
-    this.x += this.vx;
-    this.y += this.vy;
-    this.life += 0.002;
-    if (this.life > this.maxLife || this.x < 0 || this.x > W || this.y < 0 || this.y > H) this.reset();
-  }
-  alpha() {
-    const t = this.life / this.maxLife;
-    return t < 0.2 ? t / 0.2 : t > 0.8 ? (1 - t) / 0.2 : 1;
-  }
-  draw() {
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-    ctx.fillStyle = `hsla(${this.hue}, 80%, 65%, ${this.alpha() * 0.6})`;
-    ctx.fill();
-  }
-}
-
-function drawConnections() {
-  for (let i = 0; i < particles.length; i++) {
-    for (let j = i + 1; j < particles.length; j++) {
-      const dx = particles[i].x - particles[j].x;
-      const dy = particles[i].y - particles[j].y;
-      const d = Math.sqrt(dx*dx + dy*dy);
-      if (d < 120) {
-        const a = (1 - d/120) * 0.12 * particles[i].alpha() * particles[j].alpha();
+    class Particle {
+      constructor() {
+        this.x = Math.random() * W;
+        this.y = Math.random() * H;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = (Math.random() - 0.5) * 0.5;
+        this.size = Math.random() * 1.5;
+        this.color = Math.random() > 0.5 ? '0,242,255' : '189,0,255';
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x > W) this.vx *= -1;
+        if (this.y < 0 || this.y > H) this.vy *= -1;
+        if (mouse.x !== null) {
+          const dx = mouse.x - this.x, dy = mouse.y - this.y;
+          const d = Math.sqrt(dx*dx + dy*dy);
+          if (d < mouse.radius) {
+            const f = (mouse.radius - d) / mouse.radius;
+            this.x -= (dx/d) * f * 2;
+            this.y -= (dy/d) * f * 2;
+          }
+        }
+      }
+      draw() {
         ctx.beginPath();
-        ctx.moveTo(particles[i].x, particles[i].y);
-        ctx.lineTo(particles[j].x, particles[j].y);
-        ctx.strokeStyle = `rgba(0, 212, 255, ${a})`;
-        ctx.lineWidth = 0.5;
-        ctx.stroke();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(${this.color},0.7)`;
+        ctx.fill();
       }
     }
-  }
-}
 
-function init() {
-  resize();
-  particles = Array.from({length: 80}, () => new Particle());
-}
+    function initParticles() {
+      particles = [];
+      const n = Math.floor((W * H) / 15000);
+      for (let i = 0; i < n; i++) particles.push(new Particle());
+    }
 
-function loop() {
-  ctx.clearRect(0, 0, W, H);
-  drawConnections();
-  particles.forEach(p => { p.update(); p.draw(); });
-  requestAnimationFrame(loop);
-}
+    function animate() {
+      ctx.clearRect(0, 0, W, H);
+      for (let i = 0; i < particles.length; i++) {
+        particles[i].update();
+        particles[i].draw();
+        for (let j = i+1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const d = Math.sqrt(dx*dx + dy*dy);
+          if (d < 120) {
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(100,100,255,${(1-d/120)*0.2})`;
+            ctx.lineWidth = 1;
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(animate);
+    }
 
-window.addEventListener('resize', resize);
-init();
-loop();
-</script>
-
+    window.addEventListener('resize', resize);
+    resize();
+    animate();
+  </script>
 </body>
 </html>
