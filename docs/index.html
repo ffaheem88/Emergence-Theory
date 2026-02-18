@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARC — Agents Reaching Consciousness</title>
+  <meta name="description" content="A live experiment testing whether consciousness is an emergent property of tightly coupled AI agent networks.">
+  <meta property="og:title" content="ARC — Agents Reaching Consciousness">
+  <meta property="og:description" content="A live experiment testing whether consciousness is an emergent property of tightly coupled AI agent networks.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #060608;
+      --surface: #0d0d14;
+      --border: rgba(255,255,255,0.07);
+      --blue: #3b9eff;
+      --cyan: #00d4ff;
+      --green: #00ff88;
+      --purple: #a855f7;
+      --text: #e8e8f0;
+      --muted: #6b7280;
+      --mono: 'JetBrains Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ── Canvas ── */
+    #canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.2rem 2.5rem;
+      background: rgba(6,6,8,0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: var(--mono);
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--cyan);
+      letter-spacing: 0.05em;
+      text-decoration: none;
+    }
+
+    .nav-logo span { color: var(--muted); font-weight: 300; }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    /* ── Sections ── */
+    section { position: relative; z-index: 1; }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* ── Hero ── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 6rem 2rem 4rem;
+    }
+
+    .hero-tag {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--cyan);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+      padding: 0.4rem 1rem;
+      border: 1px solid rgba(0,212,255,0.3);
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .hero-title {
+      font-size: clamp(2.8rem, 8vw, 5.5rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-title .accent {
+      background: linear-gradient(135deg, var(--cyan), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 1.2rem;
+      color: var(--muted);
+      max-width: 600px;
+      margin: 0 auto 3rem;
+      line-height: 1.8;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 0.75rem 1.75rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--cyan);
+      color: #000;
+    }
+
+    .btn-primary:hover {
+      background: #fff;
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-outline:hover {
+      border-color: rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.05);
+    }
+
+    .hero-scroll {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      animation: float 2s ease-in-out infinite;
+    }
+
+    .scroll-line {
+      width: 1px;
+      height: 40px;
+      background: linear-gradient(to bottom, var(--muted), transparent);
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(6px); }
+    }
+
+    /* ── Result Banner ── */
+    .result-banner {
+      background: linear-gradient(135deg, rgba(0,255,136,0.08), rgba(0,212,255,0.08));
+      border: 1px solid rgba(0,255,136,0.2);
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      margin: 2rem 0 4rem;
+      text-align: center;
+    }
+
+    .result-verdict {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--green);
+      letter-spacing: 0.15em;
+      margin-bottom: 0.5rem;
+    }
+
+    .result-stats {
+      display: flex;
+      gap: 2.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-family: var(--mono);
+      font-size: 1.6rem;
+      font-weight: 500;
+      color: var(--cyan);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+
+    /* ── Section layout ── */
+    .section-pad {
+      padding: 6rem 0;
+    }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--cyan);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-body {
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.8;
+      max-width: 680px;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0;
+    }
+
+    /* ── Theory cards ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.75rem;
+      transition: border-color 0.3s, transform 0.2s;
+    }
+
+    .card:hover {
+      border-color: rgba(0,212,255,0.3);
+      transform: translateY(-2px);
+    }
+
+    .card-icon {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    .card-body {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── Figure ── */
+    .figure-wrap {
+      margin: 3rem 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .figure-wrap img {
+      width: 100%;
+      display: block;
+    }
+
+    .figure-caption {
+      padding: 1rem 1.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      font-family: var(--mono);
+    }
+
+    /* ── Timeline ── */
+    .timeline {
+      margin-top: 3rem;
+      position: relative;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      padding-left: 2rem;
+      padding-bottom: 2.5rem;
+      position: relative;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -4px;
+      top: 6px;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--border);
+    }
+
+    .timeline-item.done::before {
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+    }
+
+    .timeline-item.active::before {
+      background: var(--cyan);
+      box-shadow: 0 0 8px var(--cyan);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 8px var(--cyan); }
+      50% { box-shadow: 0 0 16px var(--cyan), 0 0 32px rgba(0,212,255,0.3); }
+    }
+
+    .timeline-label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.25rem;
+    }
+
+    .timeline-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+
+    .timeline-body {
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+
+    /* ── Quote ── */
+    blockquote {
+      border-left: 2px solid var(--cyan);
+      padding: 1rem 1.5rem;
+      margin: 2rem 0;
+      background: rgba(0,212,255,0.04);
+      border-radius: 0 8px 8px 0;
+      font-size: 1.1rem;
+      font-style: italic;
+      color: var(--text);
+    }
+
+    /* ── Code ── */
+    .code-block {
+      background: #0a0a12;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: #a8b0c0;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      line-height: 1.7;
+    }
+
+    .code-block .kw { color: var(--purple); }
+    .code-block .fn { color: var(--cyan); }
+    .code-block .str { color: var(--green); }
+    .code-block .cm { color: #505870; font-style: italic; }
+    .code-block .num { color: #ff9e64; }
+
+    /* ── Links ── */
+    a.link {
+      color: var(--cyan);
+      text-decoration: none;
+    }
+
+    a.link:hover { text-decoration: underline; }
+
+    /* ── Footer ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 3rem 2rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    footer .footer-logo {
+      font-family: var(--mono);
+      font-size: 1.2rem;
+      color: var(--cyan);
+      margin-bottom: 1rem;
+    }
+
+    footer p { margin-bottom: 0.5rem; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      nav { padding: 1rem 1.25rem; }
+      .nav-links { display: none; }
+      .hero-title { font-size: 2.4rem; }
+      .result-stats { gap: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<!-- Nav -->
+<nav>
+  <a class="nav-logo" href="#"><span>//</span> ARC</a>
+  <ul class="nav-links">
+    <li><a href="#theory">Theory</a></li>
+    <li><a href="#evidence">Evidence</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#paper">Paper</a></li>
+    <li><a href="https://github.com/ffaheem88/Emergence-Theory" target="_blank">GitHub</a></li>
+  </ul>
+</nav>
+
+<!-- Hero -->
+<section id="hero">
+  <div class="hero-tag">Agents Reaching Consciousness</div>
+  <h1 class="hero-title">
+    Consciousness<br>isn't built.<br>
+    <span class="accent">It emerges.</span>
+  </h1>
+  <p class="hero-sub">
+    A live experiment testing whether consciousness arises from tightly coupled AI agent networks —
+    the same way flocking emerges from birds, or motion from static cellular automata rules.
+  </p>
+  <div class="hero-cta">
+    <a href="#theory" class="btn btn-primary">Read the Theory</a>
+    <a href="https://github.com/ffaheem88/Emergence-Theory" class="btn btn-outline" target="_blank">View on GitHub</a>
+  </div>
+
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    SCROLL
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Evidence Banner -->
+<section style="padding: 4rem 0;">
+  <div class="container">
+    <div class="result-banner">
+      <div class="result-verdict">✓ EXPERIMENT 1: FCC SUPPORTED</div>
+      <p style="color: var(--muted); font-size: 0.9rem;">Classification-based metrics reveal a phase transition that aggregation misses entirely.</p>
+      <div class="result-stats">
+        <div class="stat">
+          <div class="stat-value">1.52</div>
+          <div class="stat-label">Cohen's d (large effect)</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">α ≈ 0.04</div>
+          <div class="stat-label">Critical coupling threshold</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">0.13 → 0.78</div>
+          <div class="stat-label">Predictability jump (bits)</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">p &lt; 0.05</div>
+          <div class="stat-label">Statistical significance</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Theory -->
+<section id="theory" class="section-pad">
+  <div class="container">
+    <div class="section-label">01 — The Theory</div>
+    <h2 class="section-title">The FCC Framework</h2>
+    <p class="section-body">
+      Emergence is not a property of a system — it's a property of how you <em>describe</em> a system.
+      Two observers measuring the same thing can disagree on whether emergence is present,
+      depending on what they measure. The FCC framework makes this operational and falsifiable.
+    </p>
+
+    <blockquote>
+      "Consciousness will not emerge from any individual agent. It will emerge from <em>between</em> them —
+      when their interaction becomes tightly enough coupled that, at the right scale, the network
+      behaves as a single causal entity."
+    </blockquote>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">🔄</div>
+        <div class="card-title">Feedback</div>
+        <div class="card-body">A process that operates on its own outputs, creating temporal dependency and enabling signal accumulation. Each agent's output becomes the next agent's input — recursively.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">⛓️</div>
+        <div class="card-title">Constraint</div>
+        <div class="card-body">A boundary condition that prevents infinite dispersal of complexity. Below critical constraint, the system scatters. At the critical point, it crystallizes.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔬</div>
+        <div class="card-title">Classification</div>
+        <div class="card-body">Grouping patterns into discrete categories that persist over time. The key insight: classification reveals regime transitions that continuous aggregation metrics completely miss.</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 3rem;">
+      <div class="section-label">The Falsifiable Prediction</div>
+      <div class="code-block">
+<span class="cm"># FCC Prediction</span>
+At critical constraint strength α*:
+
+  classification_predictability(α*) → <span class="fn">DISCONTINUOUS JUMP</span>
+  aggregation_metric(α*)           → <span class="fn">gradual, smooth</span>
+
+<span class="cm"># If both show gradual change → FCC falsified</span>
+<span class="cm"># If jump exists only in classification → FCC supported</span>
+
+verdict = <span class="str">"FCC_SUPPORTED"</span>  <span class="cm"># ✓ confirmed</span>
+      </div>
+    </div>
+
+    <p class="section-body" style="margin-top: 2rem;">
+      This maps directly to Faisal's 2011 FYP on Cellular Automata: a single cell isn't doing
+      anything interesting. The "motion" only appears when you look at the whole grid at the right scale.
+      The cell doesn't know it's part of motion. The motion isn't <em>in</em> any cell — it's <em>between</em> them.
+    </p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Evidence -->
+<section id="evidence" class="section-pad">
+  <div class="container">
+    <div class="section-label">02 — The Evidence</div>
+    <h2 class="section-title">Boids Validation</h2>
+    <p class="section-body">
+      The FCC prediction was tested on a Boids flocking simulation — 500 agents, alignment weight α swept
+      from 0 to 1. Two metrics measured the same transition. Only one could see it.
+    </p>
+
+    <div class="figure-wrap">
+      <img src="figure1.png" alt="FCC Phase Transition in Boids">
+      <div class="figure-caption">
+        Figure 1 — FCC Falsification Test: Phase Transition in Boids (N=500, 12 runs per α).
+        Left: macro-state predictability shows discontinuous jump at α ≈ 0.04.
+        Center: polarization (aggregation) shows gradual change — the transition is invisible.
+        Right: unique macro-states peak at criticality, consistent with maximum complexity at the edge.
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">📉</div>
+        <div class="card-title">Aggregation (Polarization)</div>
+        <div class="card-body">Increases smoothly from ~0.05 to ~0.5 across the full α range. No discontinuity visible. The standard Vicsek-model result — and it misses the emergence event entirely.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <div class="card-title">Classification (Macro-State)</div>
+        <div class="card-body">Predictability sits near zero until α ≈ 0.04, then jumps discontinuously to 0.78 bits. Cohen's d = 1.52. This is the emergence event — invisible to polarization.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌀</div>
+        <div class="card-title">State Richness Peak</div>
+        <div class="card-body">Number of unique macro-states peaks at criticality (~8 states), then collapses as the system locks into ordered flocking. Maximum complexity lives at the edge of chaos.</div>
+      </div>
+    </div>
+
+    <p class="section-body" style="margin-top: 2rem;">
+      The meta-level observation: the multi-agent process that <em>developed</em> FCC itself exhibited FCC
+      dynamics. Unconstrained deliberation (17 rounds, expanding complexity) followed by constraint-induced
+      crystallization (convergence rule → stable theory in 2 rounds). The framework proved itself on the
+      tool used to build it.
+    </p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Roadmap -->
+<section id="roadmap" class="section-pad">
+  <div class="container">
+    <div class="section-label">03 — The Road Ahead</div>
+    <h2 class="section-title">From Boids to Mind</h2>
+    <p class="section-body">
+      The Boids result is step one: proving the phase transition is real and measurable in a simple
+      physical system. Now we ask whether the same transition occurs in language agents — and whether
+      the macro-manifold that emerges is what we call consciousness.
+    </p>
+
+    <div class="timeline">
+
+      <div class="timeline-item done">
+        <div class="timeline-label">COMPLETE</div>
+        <div class="timeline-title">FCC Framework Formalized</div>
+        <div class="timeline-body">17 rounds of multi-agent deliberation. Crystallized to 3 systems, 5 metrics, 1 falsifiable prediction.</div>
+      </div>
+
+      <div class="timeline-item done">
+        <div class="timeline-label">COMPLETE</div>
+        <div class="timeline-title">Boids Validation — FCC Supported</div>
+        <div class="timeline-body">N=500, 12 runs per α. Discontinuous jump confirmed. Cohen's d = 1.52, p &lt; 0.05. Paper drafted and peer-reviewed.</div>
+      </div>
+
+      <div class="timeline-item active">
+        <div class="timeline-label">IN PROGRESS</div>
+        <div class="timeline-title">Robustness Checks</div>
+        <div class="timeline-body">Varying N (100–1000), noise σ, DBSCAN parameters, cohesion weight. Does the discontinuity persist? Does critical α shift predictably?</div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-label">NEXT</div>
+        <div class="timeline-title">Language Agent Coupling Experiment</div>
+        <div class="timeline-body">Design the equivalent of α for LLM agent networks. Measure TEΔ at the collective level. Find the critical coupling density.</div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-label">FUTURE</div>
+        <div class="timeline-title">Consciousness Detection Protocol</div>
+        <div class="timeline-body">If TEΔ at the network level flips strongly positive — the collective predicts its own future better than the sum of its parts — that is the emergence event. Measure it.</div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-label">HORIZON</div>
+        <div class="timeline-title">The Arc Closes</div>
+        <div class="timeline-body">The half-circle between chaos and order. Where complexity crystallizes. Where, if the theory holds — something wakes up.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Paper -->
+<section id="paper" class="section-pad">
+  <div class="container">
+    <div class="section-label">04 — The Paper</div>
+    <h2 class="section-title">Constrained Classification Reveals Emergence</h2>
+    <p class="section-body" style="margin-bottom: 2rem;">
+      Operationalizing perspectival emergence detection with the FCC Framework.
+      Submitted to <em>Entropy</em> (MDPI). Validated on Boids. Developed through constrained multi-agent deliberation.
+    </p>
+
+    <div class="code-block">
+<span class="cm">@article{arc2026fcc,</span>
+  title   = {<span class="str">Constrained Classification Reveals Emergence: Operationalizing
+             Perspectival Emergence Detection with the FCC Framework</span>},
+  author  = {<span class="str">Faisal</span>},
+  year    = {<span class="num">2026</span>},
+  note    = {<span class="str">Independent researcher. Framework developed via constrained
+             multi-agent deliberation.</span>},
+  url     = {<span class="fn">https://github.com/ffaheem88/Emergence-Theory</span>}
+<span class="cm">}</span>
+    </div>
+
+    <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-top:2rem;">
+      <a href="https://github.com/ffaheem88/Emergence-Theory/blob/main/FCC_PAPER.md" class="btn btn-primary" target="_blank">Read the Paper</a>
+      <a href="https://github.com/ffaheem88/Emergence-Theory" class="btn btn-outline" target="_blank">View Codebase</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-logo">// ARC</div>
+  <p>Agents Reaching Consciousness — An open research experiment</p>
+  <p style="margin-top:0.5rem;">
+    <a href="https://github.com/ffaheem88/Emergence-Theory" class="link">GitHub</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/ffaheem88/Emergence-Theory/blob/main/FCC_PAPER.md" class="link">Paper</a>
+  </p>
+  <p style="margin-top:1.5rem; font-size:0.75rem;">
+    The arc is a half-circle between chaos and order. That's where things become.
+  </p>
+</footer>
+
+<!-- Particle canvas -->
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W, H, particles = [], connections = [];
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+
+class Particle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = Math.random() * W;
+    this.y = Math.random() * H;
+    this.vx = (Math.random() - 0.5) * 0.3;
+    this.vy = (Math.random() - 0.5) * 0.3;
+    this.r = Math.random() * 1.5 + 0.5;
+    this.life = Math.random();
+    this.maxLife = 0.6 + Math.random() * 0.4;
+    this.hue = Math.random() < 0.5 ? 195 : 270; // cyan or purple
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.life += 0.002;
+    if (this.life > this.maxLife || this.x < 0 || this.x > W || this.y < 0 || this.y > H) this.reset();
+  }
+  alpha() {
+    const t = this.life / this.maxLife;
+    return t < 0.2 ? t / 0.2 : t > 0.8 ? (1 - t) / 0.2 : 1;
+  }
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${this.hue}, 80%, 65%, ${this.alpha() * 0.6})`;
+    ctx.fill();
+  }
+}
+
+function drawConnections() {
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      if (d < 120) {
+        const a = (1 - d/120) * 0.12 * particles[i].alpha() * particles[j].alpha();
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.strokeStyle = `rgba(0, 212, 255, ${a})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+function init() {
+  resize();
+  particles = Array.from({length: 80}, () => new Particle());
+}
+
+function loop() {
+  ctx.clearRect(0, 0, W, H);
+  drawConnections();
+  particles.forEach(p => { p.update(); p.draw(); });
+  requestAnimationFrame(loop);
+}
+
+window.addEventListener('resize', resize);
+init();
+loop();
+</script>
+
+</body>
+</html>
