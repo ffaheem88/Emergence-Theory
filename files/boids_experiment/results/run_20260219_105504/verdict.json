@@ -1,0 +1,37 @@
+{
+  "verdict": "FCC_FALSIFIED",
+  "critical_alpha": null,
+  "jump_magnitude": 0.00012029964701765206,
+  "p_value": 1.0,
+  "effect_size": null,
+  "timestamp": "2026-02-19T11:06:39.175116",
+  "config": {
+    "boids": {
+      "n_boids": 100,
+      "world_size": 100.0,
+      "boundary": "periodic",
+      "max_speed": 2.0,
+      "dt": 0.1,
+      "perception_radius": 10.0,
+      "alignment_weight": 1.0,
+      "cohesion_weight": 1.0,
+      "separation_weight": 1.5,
+      "separation_radius": 2.0,
+      "noise_std": 0.1
+    },
+    "sweep": {
+      "alpha_min": 0.0,
+      "alpha_max": 3.0,
+      "alpha_steps": 31,
+      "n_runs": 10,
+      "n_steps": 500,
+      "warmup_steps": 100,
+      "noise_variants": [
+        0.05,
+        0.15,
+        0.2
+      ],
+      "n_workers": 4
+    }
+  }
+}
