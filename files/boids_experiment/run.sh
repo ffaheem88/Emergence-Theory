@@ -21,10 +21,17 @@ fi
 source .venv/bin/activate
 pip install -r requirements.txt -q
 
-# Handle "quick" shorthand as first argument
-if [ "$1" = "quick" ]; then
-    shift
-    python run.py --quick "$@"
-else
-    python run.py "$@"
-fi
+# Handle mode as first argument
+case "$1" in
+    quick)
+        shift
+        python run.py --quick "$@"
+        ;;
+    revised)
+        shift
+        python fcc_revised.py "$@"
+        ;;
+    *)
+        python run.py "$@"
+        ;;
+esac

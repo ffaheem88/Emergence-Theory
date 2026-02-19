@@ -24,9 +24,11 @@ REM Activate venv and install deps
 call .venv\Scripts\activate.bat
 pip install -r requirements.txt -q
 
-REM Handle "quick" shorthand as first argument
+REM Handle mode as first argument
 if "%1"=="quick" (
     python run.py --quick %2 %3 %4 %5
+) else if "%1"=="revised" (
+    python fcc_revised.py %2 %3 %4 %5
 ) else (
     python run.py %*
 )

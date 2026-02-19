@@ -313,18 +313,19 @@ def run_alpha_sweep(
     n_runs: int = 20,
     eps: float = 15.0,
     min_samples: int = 5,
-    n_workers: int = 4
+    n_workers: int = 4,
+    n_boids: int = 500
 ) -> pd.DataFrame:
     """Run parameter sweep over alpha values."""
 
     tasks = [(alpha, run) for alpha in alphas for run in range(n_runs)]
     results = []
 
-    print(f"Running {len(tasks)} simulations (eps={eps}, min_samples={min_samples})...")
+    print(f"Running {len(tasks)} simulations (n_boids={n_boids}, eps={eps}, min_samples={min_samples})...")
 
     with ProcessPoolExecutor(max_workers=n_workers) as executor:
         futures = [
-            executor.submit(run_single_simulation, alpha, run, 2000, 500, eps, min_samples)
+            executor.submit(run_single_simulation, alpha, run, 2000, 500, eps, min_samples, n_boids)
             for alpha, run in tasks
         ]
 
@@ -533,7 +534,7 @@ def run_full_analysis(df: pd.DataFrame) -> Dict:
 # DBSCAN ROBUSTNESS SWEEP
 # ============================================================================
 
-def run_dbscan_sweep(alphas: np.ndarray, n_runs: int = 10, n_workers: int = 4) -> pd.DataFrame:
+def run_dbscan_sweep(alphas: np.ndarray, n_runs: int = 10, n_workers: int = 4, n_boids: int = 500) -> pd.DataFrame:
     """Run DBSCAN parameter sweep."""
 
     dbscan_params = [
@@ -546,7 +547,7 @@ def run_dbscan_sweep(alphas: np.ndarray, n_runs: int = 10, n_workers: int = 4) -
 
     for eps, min_samples in dbscan_params:
         print(f"\n=== DBSCAN eps={eps}, min_samples={min_samples} ===")
-        df = run_alpha_sweep(alphas, n_runs=n_runs, eps=eps, min_samples=min_samples, n_workers=n_workers)
+        df = run_alpha_sweep(alphas, n_runs=n_runs, eps=eps, min_samples=min_samples, n_workers=n_workers, n_boids=n_boids)
         all_results.append(df)
 
     return pd.concat(all_results, ignore_index=True)
@@ -744,28 +745,55 @@ def generate_summary_tables(df: pd.DataFrame, analysis: Dict, output_dir: str):
 def main():
     """Run the full revised FCC experiment."""
 
-    output_dir = os.path.join(os.path.dirname(__file__), 'results')
+    import argparse
+    parser = argparse.ArgumentParser(description='Revised FCC Validation Experiment')
+    parser.add_argument('--output-dir', default=None, help='Output directory (default: auto-versioned)')
+    parser.add_argument('--workers', type=int, default=None, help='Number of parallel workers')
+    parser.add_argument('--runs', type=int, default=20, help='Runs per alpha (default: 20)')
+    parser.add_argument('--boids', type=int, default=500, help='Number of boids (default: 500)')
+    args = parser.parse_args()
+
+    # Try to load config.yaml for defaults
+    try:
+        import yaml
+        config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
+        with open(config_path) as f:
+            cfg = yaml.safe_load(f)
+        n_boids = args.boids if args.boids != 500 else cfg.get('boids', {}).get('n_boids', 500)
+        n_workers = args.workers or cfg.get('sweep', {}).get('n_workers', 4)
+    except Exception:
+        n_boids = args.boids
+        n_workers = args.workers or 4
+
+    # Versioned output directory
+    if args.output_dir:
+        output_dir = args.output_dir
+    else:
+        run_id = datetime.now().strftime('revised_%Y%m%d_%H%M%S')
+        output_dir = os.path.join(os.path.dirname(__file__), 'results', run_id)
     os.makedirs(output_dir, exist_ok=True)
 
     print("="*60)
     print("REVISED FCC VALIDATION EXPERIMENT")
     print("="*60)
     print(f"Started at: {datetime.now().isoformat()}")
+    print(f"Output: {output_dir}")
     print()
 
     # Parameters
     alphas = np.arange(0.0, 0.31, 0.01)  # Focus on transition region
-    n_runs = 20
-    n_workers = 4
+    n_runs = args.runs
 
+    print(f"N boids: {n_boids}")
     print(f"Alpha sweep: {alphas[0]:.2f} to {alphas[-1]:.2f}, {len(alphas)} steps")
     print(f"Runs per alpha: {n_runs}")
+    print(f"Workers: {n_workers}")
     print()
 
     # Phase 1: Main sweep with default DBSCAN
     print("PHASE 1: Main Alpha Sweep (default DBSCAN eps=15, min_samples=5)")
     print("-"*60)
-    df_main = run_alpha_sweep(alphas, n_runs=n_runs, eps=15.0, min_samples=5, n_workers=n_workers)
+    df_main = run_alpha_sweep(alphas, n_runs=n_runs, eps=15.0, min_samples=5, n_workers=n_workers, n_boids=n_boids)
 
     # Analyze main results
     print("\nAnalyzing results...")
@@ -791,7 +819,7 @@ def main():
     print("PHASE 2: DBSCAN Parameter Robustness Sweep")
     print("="*60)
 
-    df_dbscan = run_dbscan_sweep(alphas, n_runs=n_runs//2, n_workers=n_workers)
+    df_dbscan = run_dbscan_sweep(alphas, n_runs=n_runs//2, n_workers=n_workers, n_boids=n_boids)
 
     # Combine results
     df_combined = pd.concat([df_main, df_dbscan], ignore_index=True)
@@ -816,7 +844,7 @@ def main():
             'n_runs': n_runs,
             'n_steps': 2000,
             'warmup': 500,
-            'n_boids': 500
+            'n_boids': n_boids
         }
     }
 
@@ -835,6 +863,16 @@ def main():
     print(f"  - verdict.json")
     print()
     print(f"FINAL VERDICT: {analysis['verdict']}")
+
+    # Update results/latest symlink
+    latest_link = os.path.join(os.path.dirname(__file__), 'results', 'latest')
+    try:
+        if os.path.exists(latest_link) or os.path.islink(latest_link):
+            os.unlink(latest_link)
+        os.symlink(os.path.abspath(output_dir), latest_link)
+        print(f"results/latest → {output_dir}")
+    except Exception as e:
+        print(f"(Note: could not update results/latest symlink: {e})")
 
     return analysis
 

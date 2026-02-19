@@ -19,9 +19,11 @@ chmod +x run.sh   # only needed once
 
 | Command | What it does |
 |---|---|
-| `./run.sh` or `run.bat` | Full experiment (~15-30 min) |
+| `./run.sh` or `run.bat` | Standard sweep — raw TEΔ across α range (~15-30 min) |
 | `./run.sh quick` or `run.bat quick` | Quick test — 7 alpha values, takes ~1 min |
-| `./run.sh --workers 4` | Use 4 CPU cores (default: all) |
+| `./run.sh revised` or `run.bat revised` | **Revised FCC experiment** — macro-state predictability analysis (~30-60 min). This is the real test. |
+| `./run.sh --workers 4` | Use 4 CPU cores (default: from config.yaml) |
+| `./run.sh revised --runs 12 --boids 500` | Revised with custom params |
 
 ## Results
 
@@ -43,19 +45,24 @@ On Windows the `latest` symlink may not be created — just open the newest `run
 
 ## What to look for
 
-Open `verdict.json` in the latest run folder. The key field:
+Open `verdict.json` in the latest run folder.
 
+**Standard sweep** (`run.sh`): Measures raw TEΔ — useful as a baseline but may not detect the phase transition.
+
+**Revised experiment** (`run.sh revised`): This is the key test. Measures macro-state predictability:
 ```json
 {
   "verdict": "FCC_SUPPORTED",
-  "critical_alpha": 0.04,
-  "effect_size": 1.52,
-  ...
+  "conditions": {
+    "D": { "cohens_d": 1.52, "critical_alpha": 0.04, "p_value": 0.001 }
+  }
 }
 ```
 
-- `FCC_SUPPORTED` + `effect_size > 0.5` → emergence confirmed ✅
-- `FCC_NOT_SUPPORTED` → no discontinuous jump found
+- `FCC_SUPPORTED` + Cohen's d > 0.5 → emergence confirmed ✅
+- `FCC_FALSIFIED` → no discontinuous jump in macro-state predictability
+
+**Why two modes?** Standard TEΔ measures individual agent-level information transfer. The revised experiment measures whether the *collective* (macro state: flock count, mode, coherence) becomes predictable — which is the actual signature of emergence.
 
 ## Sharing results
 
