@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧫 Petri Dish — Emergence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-secondary: #0f1420;
+      --glass-bg: rgba(255,255,255,0.03);
+      --glass-border: rgba(255,255,255,0.08);
+      --glass-highlight: rgba(255,255,255,0.12);
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-cyan: #06b6d4;
+      --accent-purple: #8b5cf6;
+      --accent-pink: #ec4899;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-blue: #3b82f6;
+      --gradient-primary: linear-gradient(135deg,#06b6d4 0%,#8b5cf6 50%,#ec4899 100%);
+      --shadow-card: 0 8px 32px rgba(0,0,0,0.3);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated background */
+    body::before {
+      content: '';
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(6,182,212,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(139,92,246,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(236,72,153,0.03) 0%, transparent 50%);
+      pointer-events: none; z-index: 0;
+      animation: bgPulse 15s ease-in-out infinite;
+    }
+    @keyframes bgPulse {
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:0.8; transform:scale(1.05); }
+    }
+
+    /* Floating orbs */
+    .orb { position:fixed; border-radius:50%; filter:blur(60px); opacity:0.35;
+            pointer-events:none; z-index:0; animation:float 20s ease-in-out infinite; }
+    .orb-1 { width:400px; height:400px;
+              background:linear-gradient(135deg,var(--accent-cyan),var(--accent-purple));
+              top:-100px; left:-100px; animation-delay:0s; }
+    .orb-2 { width:300px; height:300px;
+              background:linear-gradient(135deg,var(--accent-purple),var(--accent-pink));
+              bottom:-50px; right:-50px; animation-delay:-10s; }
+    .orb-3 { width:200px; height:200px;
+              background:linear-gradient(135deg,var(--accent-emerald),var(--accent-cyan));
+              top:50%; right:10%; animation-delay:-5s; }
+    @keyframes float {
+      0%,100% { transform:translate(0,0) rotate(0deg); }
+      25%      { transform:translate(20px,-20px) rotate(5deg); }
+      50%      { transform:translate(-10px,20px) rotate(-5deg); }
+      75%      { transform:translate(-20px,-10px) rotate(3deg); }
+    }
+
+    /* Header */
+    .header {
+      position: relative; z-index: 10;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 20px 40px;
+      background: linear-gradient(180deg, rgba(10,14,23,0.95) 0%, transparent 100%);
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .header-left h1 {
+      font-size: 26px; font-weight: 800; letter-spacing: -0.5px;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .nav-links { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+    .nav-link {
+      display:inline-flex; align-items:center; gap:5px;
+      padding:7px 14px; color:var(--text-secondary); text-decoration:none;
+      font-size:13px; font-weight:500; border-radius:8px;
+      background:var(--glass-bg); border:1px solid var(--glass-border);
+      transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    .nav-link:hover {
+      color:var(--text-primary); background:rgba(6,182,212,0.1);
+      border-color:rgba(6,182,212,0.3); transform:translateY(-2px);
+      box-shadow:0 4px 20px rgba(6,182,212,0.2);
+    }
+    .nav-link.active {
+      color:var(--accent-cyan); background:rgba(6,182,212,0.1);
+      border-color:rgba(6,182,212,0.4);
+    }
+
+    /* Main layout */
+    .main-layout {
+      position: relative; z-index: 10;
+      display: flex; gap: 16px;
+      padding: 16px 20px;
+      height: calc(100vh - 130px);
+    }
+
+    /* Canvas area (left 70%) */
+    .canvas-area {
+      flex: 0 0 70%;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+
+    /* Petri dish canvas */
+    .petri-wrap {
+      flex: 1;
+      background: rgba(3,3,4,0.85);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 0 60px rgba(6,182,212,0.04), var(--shadow-card);
+    }
+    #petriCanvas {
+      width: 100%; height: 100%; display: block;
+      cursor: crosshair;
+    }
+    .canvas-overlay-label {
+      position: absolute; top: 12px; left: 16px;
+      font-size: 11px; font-weight: 600; letter-spacing: 1px;
+      color: var(--text-muted); text-transform: uppercase;
+    }
+
+    /* Macro panels row */
+    .macro-row {
+      display: flex; gap: 12px;
+      height: 140px;
+    }
+    .macro-panel {
+      flex: 1;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .macro-panel h3 {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--text-muted); margin-bottom: 6px;
+    }
+    .macro-panel canvas {
+      flex: 1; width: 100%;
+    }
+
+    /* Controls panel (right 30%) */
+    .controls-panel {
+      flex: 0 0 30%;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex; flex-direction: column; gap: 18px;
+      overflow-y: auto;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .controls-panel h2 {
+      font-size: 13px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1.5px; color: var(--text-muted);
+    }
+
+    /* Status badge */
+    .status-badge {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+    }
+    .status-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--text-muted);
+      transition: background 0.3s, box-shadow 0.3s;
+      flex-shrink: 0;
+    }
+    .status-dot.running {
+      background: var(--accent-emerald);
+      box-shadow: 0 0 10px var(--accent-emerald), 0 0 20px var(--accent-emerald);
+      animation: statusPulse 1.5s ease-in-out infinite;
+    }
+    .status-dot.stopped {
+      background: var(--text-muted);
+      box-shadow: none;
+    }
+    @keyframes statusPulse {
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:0.6; transform:scale(1.2); }
+    }
+    .status-info { flex: 1; }
+    .status-state {
+      font-size: 13px; font-weight: 600;
+      color: var(--text-primary);
+    }
+    .status-meta {
+      font-size: 11px; color: var(--text-muted);
+      font-family: 'SF Mono','Fira Code',monospace;
+      margin-top: 2px;
+    }
+
+    /* Control group */
+    .ctrl-group { display: flex; flex-direction: column; gap: 6px; }
+    .ctrl-group label {
+      font-size: 12px; font-weight: 500; color: var(--text-secondary);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .ctrl-group label span {
+      font-family: 'SF Mono','Fira Code',monospace;
+      color: var(--accent-cyan); font-size: 12px;
+    }
+    input[type=range] {
+      width: 100%; -webkit-appearance: none; appearance: none;
+      height: 4px; border-radius: 2px;
+      background: rgba(255,255,255,0.1);
+      outline: none; cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--accent-cyan);
+      box-shadow: 0 0 8px rgba(6,182,212,0.5);
+      cursor: pointer; transition: box-shadow 0.2s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      box-shadow: 0 0 16px rgba(6,182,212,0.8);
+    }
+    select {
+      width: 100%;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    select:hover, select:focus {
+      border-color: rgba(6,182,212,0.4);
+    }
+    select option { background: #0f1420; }
+
+    /* Action buttons */
+    .btn-row { display: flex; gap: 8px; }
+    .btn {
+      flex: 1; padding: 10px 8px;
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      background: var(--glass-bg);
+      color: var(--text-primary);
+      font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn.play  { border-color:rgba(16,185,129,0.4); color:var(--accent-emerald); }
+    .btn.play:hover  { background:rgba(16,185,129,0.15); box-shadow:0 4px 20px rgba(16,185,129,0.2); }
+    .btn.pause { border-color:rgba(245,158,11,0.4); color:var(--accent-amber); }
+    .btn.pause:hover { background:rgba(245,158,11,0.15); box-shadow:0 4px 20px rgba(245,158,11,0.2); }
+    .btn.reset { border-color:rgba(244,63,94,0.4); color:var(--accent-rose); }
+    .btn.reset:hover { background:rgba(244,63,94,0.15); box-shadow:0 4px 20px rgba(244,63,94,0.2); }
+    .btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+
+    /* Event log (last few events) */
+    .event-log {
+      flex: 1;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      padding: 10px;
+      overflow-y: auto;
+      font-family: 'SF Mono','Fira Code',monospace;
+      font-size: 10px;
+      color: var(--text-muted);
+      max-height: 160px;
+      min-height: 60px;
+    }
+    .event-log .ev { margin-bottom: 3px; line-height: 1.4; }
+    .ev-agent  { color: var(--accent-cyan); }
+    .ev-latency { color: var(--accent-amber); }
+    .ev-tokens  { color: var(--accent-emerald); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>🧫 Petri Dish — LLM Emergence</h1>
+      <div class="nav-links">
+        <a href="/" class="nav-link">🏠 Dashboard</a>
+        <a href="/mail.html" class="nav-link">📧 Mail</a>
+        <a href="/agents.html" class="nav-link">🎛️ Agents</a>
+        <a href="/settings.html" class="nav-link">⚙️ Settings</a>
+        <a href="/neural.html" class="nav-link">🧠 Neural</a>
+        <a href="/logs.html" class="nav-link">📋 Logs</a>
+        <a href="/identity.html" class="nav-link">🧠 Identity</a>
+        <a href="/emergence.html" class="nav-link active">🧫 Emergence</a>
+        <a href="/logout" class="nav-link" style="color:var(--accent-rose);">⏏ Logout</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main layout -->
+  <div class="main-layout">
+
+    <!-- Left: Canvas area -->
+    <div class="canvas-area">
+      <!-- Petri dish -->
+      <div class="petri-wrap">
+        <div class="canvas-overlay-label">🧫 Petri Dish</div>
+        <canvas id="petriCanvas"></canvas>
+      </div>
+
+      <!-- Macro panels -->
+      <div class="macro-row">
+        <div class="macro-panel">
+          <h3>💓 Heartbeat</h3>
+          <canvas id="heartbeatCanvas"></canvas>
+        </div>
+        <div class="macro-panel">
+          <h3>〰️ Entropy</h3>
+          <canvas id="entropyCanvas"></canvas>
+        </div>
+        <div class="macro-panel">
+          <h3>🌀 Phase Portrait</h3>
+          <canvas id="phaseCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Controls -->
+    <div class="controls-panel">
+      <h2>⚗️ Controls</h2>
+
+      <!-- Status -->
+      <div class="status-badge">
+        <div class="status-dot stopped" id="statusDot"></div>
+        <div class="status-info">
+          <div class="status-state" id="statusState">Stopped</div>
+          <div class="status-meta" id="statusMeta">—</div>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="btn-row">
+        <button class="btn play"  id="btnPlay"  onclick="handlePlay()">▶ Play</button>
+        <button class="btn pause" id="btnPause" onclick="handlePause()" disabled>⏸ Pause</button>
+        <button class="btn reset" id="btnReset" onclick="handleReset()">🔄 Reset</button>
+      </div>
+
+      <!-- Coupling α -->
+      <div class="ctrl-group">
+        <label>Coupling α <span id="valAlpha">0.50</span></label>
+        <input type="range" id="sliderAlpha" min="0" max="1" step="0.05" value="0.5"
+               oninput="document.getElementById('valAlpha').textContent=parseFloat(this.value).toFixed(2); liveUpdate();">
+      </div>
+
+      <!-- Agents -->
+      <div class="ctrl-group">
+        <label>Agents <span id="valAgents">5</span></label>
+        <select id="selAgents" onchange="document.getElementById('valAgents').textContent=this.value;">
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5" selected>5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+          <option value="11">11</option>
+          <option value="12">12</option>
+        </select>
+      </div>
+
+      <!-- Max tokens -->
+      <div class="ctrl-group">
+        <label>Max Tokens <span id="valTokens">20</span></label>
+        <input type="range" id="sliderTokens" min="5" max="50" step="1" value="20"
+               oninput="document.getElementById('valTokens').textContent=this.value; liveUpdate();">
+      </div>
+
+      <!-- Topology -->
+      <div class="ctrl-group">
+        <label>Topology</label>
+        <select id="selTopology">
+          <option value="ring" selected>Ring</option>
+          <option value="mesh">Mesh</option>
+          <option value="random">Random</option>
+          <option value="star">Star</option>
+        </select>
+      </div>
+
+      <!-- Tick delay -->
+      <div class="ctrl-group">
+        <label>Tick Delay <span id="valDelay">500ms</span></label>
+        <input type="range" id="sliderDelay" min="100" max="2000" step="100" value="500"
+               oninput="document.getElementById('valDelay').textContent=this.value+'ms'; liveUpdate();">
+      </div>
+
+      <!-- Model -->
+      <div class="ctrl-group">
+        <label>Model</label>
+        <select id="selModel">
+          <option value="qwen2:0.5b" selected>qwen2:0.5b (fast)</option>
+          <option value="tinyllama">tinyllama</option>
+          <option value="llama3.2:3b">llama3.2:3b</option>
+        </select>
+      </div>
+
+      <!-- Event log -->
+      <div class="ctrl-group">
+        <label>Recent Events</label>
+        <div class="event-log" id="eventLog">
+          <div class="ev" style="color:var(--text-muted);">Waiting for data…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // ══════════════════════════════════════════════════════════════
+  // State
+  // ══════════════════════════════════════════════════════════════
+  const state = {
+    running: false,
+    tickCount: 0,
+    startTime: null,
+    agents: [],           // [{id, x, y, vx, vy, hue, size, pulse, tokens, interactions:{id:count}}]
+    edges: [],            // [{a, b, strength, age}] — recent interactions
+    heartbeat: [],        // [{t, rate}] last 60s of response events
+    entropy: [],          // [{t, val}]
+    phaseTrail: [],       // [{latency, entropy}]
+    lastEvents: [],       // raw JSON events
+    latencySum: 0,
+    latencyCount: 0,
+    cpuSmooth: 0,
+    N: 5,
+  };
+
+  let eventSource = null;
+  let animFrame = null;
+  let statusPoll = null;
+
+  // ══════════════════════════════════════════════════════════════
+  // Canvas setup
+  // ══════════════════════════════════════════════════════════════
+  const petriCanvas    = document.getElementById('petriCanvas');
+  const hbCanvas       = document.getElementById('heartbeatCanvas');
+  const entCanvas      = document.getElementById('entropyCanvas');
+  const phaseCanvas    = document.getElementById('phaseCanvas');
+  const pCtx  = petriCanvas.getContext('2d');
+  const hCtx  = hbCanvas.getContext('2d');
+  const eCtx  = entCanvas.getContext('2d');
+  const phCtx = phaseCanvas.getContext('2d');
+
+  function resizeCanvases() {
+    const wr = petriCanvas.parentElement;
+    petriCanvas.width  = wr.clientWidth;
+    petriCanvas.height = wr.clientHeight;
+
+    for (const c of [hbCanvas, entCanvas, phaseCanvas]) {
+      c.width  = c.parentElement.clientWidth - 28;
+      c.height = c.parentElement.clientHeight - 36;
+    }
+
+    initAgentPositions();
+  }
+  window.addEventListener('resize', resizeCanvases);
+
+  // ══════════════════════════════════════════════════════════════
+  // Agent colors — evenly-spaced hues
+  // ══════════════════════════════════════════════════════════════
+  function agentHue(id, n) { return (id / n) * 360; }
+
+  function initAgentPositions() {
+    const W = petriCanvas.width, H = petriCanvas.height;
+    const cx = W/2, cy = H/2, R = Math.min(W,H) * 0.32;
+    const n = state.N;
+    if (state.agents.length !== n) {
+      state.agents = Array.from({length: n}, (_, i) => ({
+        id: i,
+        x: cx + R * Math.cos(2*Math.PI*i/n - Math.PI/2),
+        y: cy + R * Math.sin(2*Math.PI*i/n - Math.PI/2),
+        vx: 0, vy: 0,
+        hue: agentHue(i, n),
+        size: 24,
+        targetSize: 24,
+        pulse: 0,        // 0→1, decays
+        tokens: 0,
+        interactions: {},
+      }));
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // SSE data handler
+  // ══════════════════════════════════════════════════════════════
+  function connectSSE() {
+    if (eventSource) { eventSource.close(); eventSource = null; }
+    eventSource = new EventSource('/api/stream');
+
+    eventSource.onmessage = (e) => {
+      let obj;
+      try { obj = JSON.parse(e.data); } catch { return; }
+
+      if (obj._type === 'exit') {
+        state.running = false;
+        updateStatusUI(false);
+        return;
+      }
+
+      state.tickCount = obj.tick || state.tickCount;
+      const now = Date.now();
+
+      // Update heartbeat
+      state.heartbeat.push({ t: now, rate: 1 });
+      const cutoff = now - 60000;
+      state.heartbeat = state.heartbeat.filter(h => h.t > cutoff);
+
+      // CPU smoothing
+      if (obj.cpu !== undefined) state.cpuSmooth = state.cpuSmooth * 0.85 + obj.cpu * 0.15;
+
+      // Latency
+      if (obj.latency_ms !== undefined) {
+        state.latencySum += obj.latency_ms;
+        state.latencyCount++;
+      }
+
+      // Entropy (approx: use coefficient of variation of recent latencies)
+      const ent = computeEntropy();
+      state.entropy.push({ t: now, val: ent });
+      if (state.entropy.length > 300) state.entropy.shift();
+
+      // Phase portrait trail
+      const avgLat = state.latencyCount ? state.latencySum / state.latencyCount : 0;
+      state.phaseTrail.push({ latency: avgLat, entropy: ent });
+      if (state.phaseTrail.length > 200) state.phaseTrail.shift();
+
+      // Agent update
+      const agentId  = obj.agent   !== undefined ? obj.agent   : null;
+      const partnerId = obj.partner !== undefined ? obj.partner : null;
+      const maxId = Math.max(agentId ?? 0, partnerId ?? 0);
+      while (state.agents.length <= maxId) {
+        const id = state.agents.length;
+        const W = petriCanvas.width, H = petriCanvas.height;
+        state.agents.push({
+          id, x: W/2 + (Math.random()-0.5)*200, y: H/2 + (Math.random()-0.5)*200,
+          vx:0, vy:0, hue: agentHue(id, state.N),
+          size:24, targetSize:24, pulse:0, tokens:0, interactions:{}
+        });
+      }
+      if (agentId !== null && state.agents[agentId]) {
+        const ag = state.agents[agentId];
+        ag.pulse = 1.0;
+        ag.tokens += obj.tokens || 0;
+        ag.targetSize = Math.min(40, 16 + (ag.tokens / 200) * 24);
+        if (partnerId !== null && partnerId !== agentId) {
+          ag.interactions[partnerId] = (ag.interactions[partnerId] || 0) + 1;
+        }
+      }
+
+      // Edges
+      if (agentId !== null && partnerId !== null && agentId !== partnerId) {
+        const key = Math.min(agentId, partnerId) + '_' + Math.max(agentId, partnerId);
+        const existing = state.edges.find(e => e.key === key);
+        if (existing) { existing.strength = 1.0; existing.age = 0; }
+        else state.edges.push({ key, a: agentId, b: partnerId, strength: 1.0, age: 0 });
+      }
+
+      // Event log
+      const desc = `A${obj.agent}→A${obj.partner} lat=${obj.latency_ms}ms tok=${obj.tokens}`;
+      addEventLog(desc, obj.agent, obj.latency_ms, obj.tokens);
+    };
+
+    eventSource.onerror = () => {
+      // silently retry — browser handles reconnect
+    };
+  }
+
+  function disconnectSSE() {
+    if (eventSource) { eventSource.close(); eventSource = null; }
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // Entropy approximation from recent latency variance
+  // ══════════════════════════════════════════════════════════════
+  function computeEntropy() {
+    const window = state.heartbeat.slice(-30);
+    if (window.length < 2) return 0;
+    // use inter-arrival times
+    const gaps = [];
+    for (let i = 1; i < window.length; i++) gaps.push(window[i].t - window[i-1].t);
+    const mean = gaps.reduce((a,b)=>a+b,0) / gaps.length;
+    const variance = gaps.reduce((a,b)=>a+(b-mean)**2,0) / gaps.length;
+    // normalized entropy: std/mean capped 0-1
+    return Math.min(1, Math.sqrt(variance) / (mean + 1e-6));
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // Event log
+  // ══════════════════════════════════════════════════════════════
+  function addEventLog(desc, agentId, latency, tokens) {
+    const log = document.getElementById('eventLog');
+    const el = document.createElement('div');
+    el.className = 'ev';
+    el.innerHTML = `<span class="ev-agent">A${agentId}</span> `
+      + `lat=<span class="ev-latency">${latency}ms</span> `
+      + `tok=<span class="ev-tokens">${tokens}</span>`;
+    log.insertBefore(el, log.firstChild);
+    while (log.children.length > 20) log.removeChild(log.lastChild);
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // Force-directed layout
+  // ══════════════════════════════════════════════════════════════
+  function applyForces() {
+    const W = petriCanvas.width, H = petriCanvas.height;
+    const agents = state.agents;
+    const n = agents.length;
+    if (n === 0) return;
+
+    const cx = W/2, cy = H/2;
+    const REPEL = 4000, ATTRACT_EDGE = 0.002, CENTER = 0.003;
+
+    for (let i = 0; i < n; i++) {
+      const ai = agents[i];
+      let fx = 0, fy = 0;
+
+      // Repulsion between all agents
+      for (let j = 0; j < n; j++) {
+        if (i === j) continue;
+        const aj = agents[j];
+        const dx = ai.x - aj.x, dy = ai.y - aj.y;
+        const d2 = dx*dx + dy*dy + 1;
+        const f  = REPEL / d2;
+        fx += f * dx / Math.sqrt(d2);
+        fy += f * dy / Math.sqrt(d2);
+      }
+
+      // Attraction along active edges
+      for (const edge of state.edges) {
+        if (edge.a !== i && edge.b !== i) continue;
+        const other = edge.a === i ? edge.b : edge.a;
+        const ao = agents[other];
+        if (!ao) continue;
+        const dx = ao.x - ai.x, dy = ao.y - ai.y;
+        const strength = edge.strength * ATTRACT_EDGE * (1 + (ai.interactions[other] || 0) * 0.1);
+        fx += dx * strength;
+        fy += dy * strength;
+      }
+
+      // Centering pull
+      fx += (cx - ai.x) * CENTER;
+      fy += (cy - ai.y) * CENTER;
+
+      ai.vx = (ai.vx + fx) * 0.8;
+      ai.vy = (ai.vy + fy) * 0.8;
+
+      ai.x = Math.max(50, Math.min(W-50, ai.x + ai.vx));
+      ai.y = Math.max(50, Math.min(H-50, ai.y + ai.vy));
+
+      // Hue drift: interact a lot → hues converge
+      for (const [otherId, count] of Object.entries(ai.interactions)) {
+        const ao = agents[otherId];
+        if (!ao) continue;
+        const diff = ao.hue - ai.hue;
+        ai.hue += diff * Math.min(count * 0.0005, 0.01);
+      }
+    }
+
+    // Decay edges
+    for (const e of state.edges) {
+      e.age++;
+      e.strength = Math.max(0, e.strength - 0.02);
+    }
+    state.edges = state.edges.filter(e => e.strength > 0.05);
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // Petri dish render
+  // ══════════════════════════════════════════════════════════════
+  function drawPetri() {
+    const W = petriCanvas.width, H = petriCanvas.height;
+    pCtx.clearRect(0, 0, W, H);
+
+    // Background: dark + cpu glow
+    const cpuGlow = state.cpuSmooth / 100;
+    pCtx.fillStyle = `rgba(3,3,4,${0.92 - cpuGlow * 0.1})`;
+    pCtx.fillRect(0, 0, W, H);
+
+    if (cpuGlow > 0.05) {
+      const grd = pCtx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H)/2);
+      grd.addColorStop(0, `rgba(139,92,246,${cpuGlow * 0.06})`);
+      grd.addColorStop(1, 'transparent');
+      pCtx.fillStyle = grd;
+      pCtx.fillRect(0, 0, W, H);
+    }
+
+    // Connection lines
+    for (const edge of state.edges) {
+      const a = state.agents[edge.a], b = state.agents[edge.b];
+      if (!a || !b) continue;
+      const alpha = edge.strength * 0.7;
+      const hue = (a.hue + b.hue) / 2;
+      pCtx.beginPath();
+      pCtx.moveTo(a.x, a.y);
+      pCtx.lineTo(b.x, b.y);
+      pCtx.strokeStyle = `hsla(${hue},80%,60%,${alpha})`;
+      pCtx.lineWidth = 1.5 + edge.strength * 2;
+      pCtx.shadowBlur = 8;
+      pCtx.shadowColor = `hsla(${hue},80%,60%,${alpha * 0.6})`;
+      pCtx.stroke();
+      pCtx.shadowBlur = 0;
+    }
+
+    // Agents
+    for (const ag of state.agents) {
+      // Smooth size
+      ag.size += (ag.targetSize - ag.size) * 0.1;
+
+      // Pulse
+      const pulseR = ag.size + ag.pulse * 18;
+      ag.pulse = Math.max(0, ag.pulse - 0.04);
+
+      const h = ag.hue;
+      const r = ag.size;
+
+      // Outer pulse ring
+      if (ag.pulse > 0.05) {
+        pCtx.beginPath();
+        pCtx.arc(ag.x, ag.y, pulseR, 0, Math.PI*2);
+        pCtx.strokeStyle = `hsla(${h},90%,65%,${ag.pulse * 0.6})`;
+        pCtx.lineWidth = 2;
+        pCtx.shadowBlur = 16;
+        pCtx.shadowColor = `hsla(${h},90%,65%,${ag.pulse * 0.4})`;
+        pCtx.stroke();
+        pCtx.shadowBlur = 0;
+      }
+
+      // Glow halo
+      const grd = pCtx.createRadialGradient(ag.x, ag.y, 0, ag.x, ag.y, r * 2.5);
+      grd.addColorStop(0, `hsla(${h},80%,65%,0.3)`);
+      grd.addColorStop(1, `hsla(${h},80%,65%,0)`);
+      pCtx.beginPath();
+      pCtx.arc(ag.x, ag.y, r * 2.5, 0, Math.PI*2);
+      pCtx.fillStyle = grd;
+      pCtx.fill();
+
+      // Main body
+      const bodyGrd = pCtx.createRadialGradient(ag.x - r*0.3, ag.y - r*0.3, 0, ag.x, ag.y, r);
+      bodyGrd.addColorStop(0, `hsla(${h},80%,80%,0.95)`);
+      bodyGrd.addColorStop(1, `hsla(${h},70%,50%,0.85)`);
+      pCtx.beginPath();
+      pCtx.arc(ag.x, ag.y, r, 0, Math.PI*2);
+      pCtx.fillStyle = bodyGrd;
+      pCtx.shadowBlur = 20;
+      pCtx.shadowColor = `hsla(${h},80%,60%,0.6)`;
+      pCtx.fill();
+      pCtx.shadowBlur = 0;
+
+      // Label
+      pCtx.fillStyle = 'rgba(255,255,255,0.9)';
+      pCtx.font = `bold ${Math.max(10, r * 0.55)}px Inter, sans-serif`;
+      pCtx.textAlign = 'center';
+      pCtx.textBaseline = 'middle';
+      pCtx.fillText(`A${ag.id}`, ag.x, ag.y);
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // Heartbeat chart (scrolling line)
+  // ══════════════════════════════════════════════════════════════
+  function drawHeartbeat() {
+    const W = hbCanvas.width, H = hbCanvas.height;
+    hCtx.clearRect(0, 0, W, H);
+
+    // Build 60s bucket array (1s buckets)
+    const now = Date.now();
+    const buckets = new Array(60).fill(0);
+    for (const h of state.heartbeat) {
+      const sec = Math.floor((now - h.t) / 1000);
+      if (sec >= 0 && sec < 60) buckets[59 - sec]++;
+    }
+    const maxB = Math.max(1, ...buckets);
+
+    hCtx.beginPath();
+    for (let i = 0; i < 60; i++) {
+      const x = (i / 59) * W;
+      const y = H - (buckets[i] / maxB) * (H - 4) - 2;
+      if (i === 0) hCtx.moveTo(x, y);
+      else hCtx.lineTo(x, y);
+    }
+    hCtx.strokeStyle = 'rgba(6,182,212,0.8)';
+    hCtx.lineWidth = 2;
+    hCtx.shadowBlur = 6;
+    hCtx.shadowColor = 'rgba(6,182,212,0.5)';
+    hCtx.stroke();
+    hCtx.shadowBlur = 0;
+
+    // Fill under curve
+    hCtx.lineTo(W, H); hCtx.lineTo(0, H); hCtx.closePath();
+    hCtx.fillStyle = 'rgba(6,182,212,0.08)';
+    hCtx.fill();
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // Entropy chart (rolling line)
+  // ══════════════════════════════════════════════════════════════
+  function drawEntropy() {
+    const W = entCanvas.width, H = entCanvas.height;
+    eCtx.clearRect(0, 0, W, H);
+    if (state.entropy.length < 2) return;
+
+    const slice = state.entropy.slice(-W);
+    eCtx.beginPath();
+    for (let i = 0; i < slice.length; i++) {
+      const x = (i / (slice.length - 1)) * W;
+      const y = H - slice[i].val * (H - 4) - 2;
+      if (i === 0) eCtx.moveTo(x, y);
+      else eCtx.lineTo(x, y);
+    }
+    eCtx.strokeStyle = 'rgba(139,92,246,0.85)';
+    eCtx.lineWidth = 2;
+    eCtx.shadowBlur = 6;
+    eCtx.shadowColor = 'rgba(139,92,246,0.5)';
+    eCtx.stroke();
+    eCtx.shadowBlur = 0;
+
+    eCtx.lineTo(W, H); eCtx.lineTo(0, H); eCtx.closePath();
+    eCtx.fillStyle = 'rgba(139,92,246,0.07)';
+    eCtx.fill();
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // Phase portrait (latency vs entropy, trailing dots)
+  // ══════════════════════════════════════════════════════════════
+  function drawPhase() {
+    const W = phaseCanvas.width, H = phaseCanvas.height;
+    phCtx.clearRect(0, 0, W, H);
+    if (state.phaseTrail.length < 2) return;
+
+    // Find extents
+    let minL = Infinity, maxL = 0, minE = 0, maxE = 1;
+    for (const p of state.phaseTrail) {
+      if (p.latency < minL) minL = p.latency;
+      if (p.latency > maxL) maxL = p.latency;
+    }
+    if (maxL === minL) maxL = minL + 1;
+
+    const scaleX = (l) => ((l - minL) / (maxL - minL)) * (W - 10) + 5;
+    const scaleY = (e) => H - 5 - e * (H - 10);
+
+    // Draw trail with fading
+    const n = state.phaseTrail.length;
+    for (let i = 1; i < n; i++) {
+      const alpha = i / n;
+      const p = state.phaseTrail[i];
+      const pp = state.phaseTrail[i-1];
+      phCtx.beginPath();
+      phCtx.moveTo(scaleX(pp.latency), scaleY(pp.entropy));
+      phCtx.lineTo(scaleX(p.latency),  scaleY(p.entropy));
+      phCtx.strokeStyle = `hsla(280,80%,65%,${alpha * 0.7})`;
+      phCtx.lineWidth = 1.5;
+      phCtx.stroke();
+    }
+
+    // Current point
+    const last = state.phaseTrail[n-1];
+    phCtx.beginPath();
+    phCtx.arc(scaleX(last.latency), scaleY(last.entropy), 4, 0, Math.PI*2);
+    phCtx.fillStyle = 'rgba(236,72,153,0.9)';
+    phCtx.shadowBlur = 10;
+    phCtx.shadowColor = 'rgba(236,72,153,0.6)';
+    phCtx.fill();
+    phCtx.shadowBlur = 0;
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // Main animation loop
+  // ══════════════════════════════════════════════════════════════
+  function tick() {
+    applyForces();
+    drawPetri();
+    drawHeartbeat();
+    drawEntropy();
+    drawPhase();
+    animFrame = requestAnimationFrame(tick);
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // Status UI
+  // ══════════════════════════════════════════════════════════════
+  function updateStatusUI(running, tickCount, uptimeSec) {
+    const dot   = document.getElementById('statusDot');
+    const stateEl = document.getElementById('statusState');
+    const meta  = document.getElementById('statusMeta');
+    const btnPlay  = document.getElementById('btnPlay');
+    const btnPause = document.getElementById('btnPause');
+
+    state.running = running;
+    dot.className = 'status-dot ' + (running ? 'running' : 'stopped');
+    stateEl.textContent = running ? '🟢 Running' : '⭕ Stopped';
+
+    const tc = tickCount !== undefined ? tickCount : state.tickCount;
+    const up = uptimeSec !== undefined ? uptimeSec : (state.startTime ? Math.floor((Date.now() - state.startTime)/1000) : 0);
+    meta.textContent = `Tick ${tc} • Uptime ${up}s`;
+
+    btnPlay.disabled  =  running;
+    btnPause.disabled = !running;
+  }
+
+  // Poll status periodically
+  function startStatusPoll() {
+    if (statusPoll) clearInterval(statusPoll);
+    statusPoll = setInterval(async () => {
+      try {
+        const r = await fetch('/api/status');
+        const d = await r.json();
+        updateStatusUI(d.running, d.tickCount, d.uptimeSec);
+      } catch {}
+    }, 3000);
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // Control handlers
+  // ══════════════════════════════════════════════════════════════
+  async function handlePlay() {
+    const body = {
+      agents:    parseInt(document.getElementById('selAgents').value),
+      alpha:     parseFloat(document.getElementById('sliderAlpha').value),
+      maxTokens: parseInt(document.getElementById('sliderTokens').value),
+      topology:  document.getElementById('selTopology').value,
+      tickDelay: parseInt(document.getElementById('sliderDelay').value),
+      model:     document.getElementById('selModel').value,
+    };
+    state.N = body.agents;
+    state.agents = [];
+    state.edges  = [];
+    state.heartbeat = [];
+    state.entropy   = [];
+    state.phaseTrail = [];
+    state.latencySum = 0;
+    state.latencyCount = 0;
+    state.cpuSmooth = 0;
+    state.startTime = Date.now();
+
+    initAgentPositions();
+
+    try {
+      const r = await fetch('/api/start', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+      const d = await r.json();
+      if (d.ok) {
+        connectSSE();
+        updateStatusUI(true, 0, 0);
+      } else {
+        alert('Start failed: ' + (d.error || 'unknown'));
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  async function handlePause() {
+    try {
+      await fetch('/api/stop', { method: 'POST' });
+      disconnectSSE();
+      updateStatusUI(false);
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  function handleReset() {
+    handlePause();
+    state.agents = [];
+    state.edges  = [];
+    state.heartbeat = [];
+    state.entropy   = [];
+    state.phaseTrail = [];
+    state.latencySum = 0;
+    state.latencyCount = 0;
+    state.cpuSmooth = 0;
+    state.tickCount = 0;
+    document.getElementById('eventLog').innerHTML = '<div class="ev" style="color:var(--text-muted);">Reset. Press ▶ to start.</div>';
+    updateStatusUI(false, 0, 0);
+    initAgentPositions();
+  }
+
+  // Live-update config without restart (alpha, tokens, delay)
+  let liveDebounce = null;
+  function liveUpdate() {
+    if (!state.running) return;
+    clearTimeout(liveDebounce);
+    liveDebounce = setTimeout(async () => {
+      const update = {
+        alpha:     parseFloat(document.getElementById('sliderAlpha').value),
+        max_tokens: parseInt(document.getElementById('sliderTokens').value),
+        tick_delay: parseInt(document.getElementById('sliderDelay').value),
+      };
+      try {
+        await fetch('/api/config', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(update)
+        });
+      } catch {}
+    }, 300);
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // Init
+  // ══════════════════════════════════════════════════════════════
+  resizeCanvases();
+  tick();
+  startStatusPoll();
+
+  // Check if already running on load
+  fetch('/api/status').then(r=>r.json()).then(d => {
+    if (d.running) {
+      state.running = true;
+      state.N = d.config?.agents || 5;
+      state.startTime = Date.now() - (d.uptimeSec * 1000);
+      initAgentPositions();
+      connectSSE();
+      updateStatusUI(true, d.tickCount, d.uptimeSec);
+    } else {
+      updateStatusUI(false, 0, 0);
+    }
+  }).catch(() => updateStatusUI(false, 0, 0));
+  </script>
+</body>
+</html>
