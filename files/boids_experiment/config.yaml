@@ -1,5 +1,5 @@
 boids:
-  n_boids: 100
+  n_boids: 500
   world_size: 100.0
   boundary: periodic
   max_speed: 2.0
